@@ -1,0 +1,137 @@
+/* Top Navigation */
+.top-nav {
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.menu-toggle {
+    padding: 8px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 24px;
+    color: #374151;
+}
+
+.menu-toggle:hover {
+    background-color: #f3f4f6;
+}
+
+.page-title h2 {
+    font-size: 20px;
+    font-weight: bold;
+    color: #111827;
+}
+
+.page-title p {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Search Box */
+.search-box {
+    position: relative;
+    display: none;
+}
+
+.search-box input {
+    width: 256px;
+    padding: 8px 16px 8px 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    font-size: 14px;
+    outline: none;
+}
+
+.search-box input:focus {
+    border-color: #16A34A;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+/* Icon Button */
+.icon-button {
+    position: relative;
+    padding: 8px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #4b5563;
+}
+
+.icon-button:hover {
+    background-color: #f3f4f6;
+}
+
+.notification-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+}
+
+/* Profile Section */
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #16A34A, #4ADE80);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+/* Responsive Design - Navbar */
+@media (min-width: 768px) {
+    .menu-toggle {
+        display: none;
+    }
+
+    .search-box {
+        display: block;
+    }
+}

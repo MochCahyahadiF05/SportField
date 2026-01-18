@@ -1,183 +1,172 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - SportField</title>
-    <link rel="stylesheet" href="../../assets/css/navbar-footer.css">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #F0FDF4;
-            color: #064E3B;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-        
-        .main-content {
-            padding-top: 120px;
-            min-height: 100vh;
-        }
-        
-        .dashboard-header {
-            margin-bottom: 2rem;
-        }
-        
-        .dashboard-header h1 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #16A34A;
-        }
-        
-        .dashboard-header p {
-            color: #6b7280;
-            font-size: 1.1rem;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-card h3 {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        
-        .stat-card .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #16A34A;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: #064E3B;
-        }
-        
-        .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .btn {
-            padding: 0.75rem 1.5rem;
-            background: #16A34A;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .btn:hover {
-            background: #15803d;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-        }
-    </style>
-</head>
-<body>
-    <?php
-    require_once '../../config/config.php';
-    require_once '../../config/Auth.php';
+<?php
+require_once '../../config/config.php';
+require_once '../../config/Auth.php';
 
-    // Check if user is logged in
-    if (!Auth::isLoggedIn()) {
-        header('Location: ' . BASE_URL . 'page/auth/login.php');
-        exit();
-    }
+// Check if user is logged in
+if (!Auth::isLoggedIn()) {
+    header('Location: ' . BASE_URL . 'page/auth/login.php');
+    exit();
+}
 
-    // Check if user is ADMIN - jika bukan admin, redirect ke home
-    if (!Auth::isAdmin()) {
-        header('Location: ' . BASE_URL . 'index.php');
-        exit();
-    }
+// Check if user is ADMIN
+if (!Auth::isAdmin()) {
+    header('Location: ' . BASE_URL . 'index.php');
+    exit();
+}
 
-    $currentUser = Auth::getUser();
-    ?>
+$currentUser = Auth::getUser();
 
-    <!-- Navbar -->
-    <?php include '../includes/navbar.php'; ?>
+// Set page-specific variables
+$page_title = "Dashboard";
+$page_subtitle = "Selamat datang kembali, " . htmlspecialchars($currentUser['name']) . "!";
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            <div class="dashboard-header">
-                <h1>Admin Dashboard</h1>
-                <p>Selamat datang, <?php echo htmlspecialchars($currentUser['name']); ?>! Kelola platform SportField dari sini.</p>
+// Start output buffering for page content
+ob_start();
+?>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <!-- Card 1 -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon blue">
+                <i class="fas fa-calendar"></i>
             </div>
-
-            <!-- Statistics -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Users</h3>
-                    <div class="stat-value">125</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Lapangan</h3>
-                    <div class="stat-value">12</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Booking</h3>
-                    <div class="stat-value">456</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Revenue</h3>
-                    <div class="stat-value">Rp 4.5M</div>
-                </div>
-            </div>
-
-            <!-- Management Sections -->
-            <div class="card">
-                <h2 class="section-title">Manajemen Pengguna</h2>
-                <p>Kelola data pengguna, role, dan akses sistem.</p>
-                <button class="btn">Kelola Pengguna</button>
-            </div>
-
-            <div class="card">
-                <h2 class="section-title">Manajemen Lapangan</h2>
-                <p>Tambah, edit, atau hapus lapangan olahraga dari sistem.</p>
-                <button class="btn">Kelola Lapangan</button>
-            </div>
-
-            <div class="card">
-                <h2 class="section-title">Manajemen Booking</h2>
-                <p>Lihat dan kelola semua booking dari pengguna.</p>
-                <button class="btn">Kelola Booking</button>
-            </div>
-
-            <div class="card">
-                <h2 class="section-title">Laporan & Analytics</h2>
-                <p>Lihat laporan pendapatan, statistik pengguna, dan analytics lainnya.</p>
-                <button class="btn">Lihat Laporan</button>
-            </div>
+            <span class="stat-change positive">+12%</span>
         </div>
-    </main>
+        <h3 class="stat-label">Total Booking</h3>
+        <p class="stat-value">1,234</p>
+        <p class="stat-period">Bulan ini</p>
+    </div>
 
-    <!-- Footer -->
-    <?php include '../includes/footer.php'; ?>
-</body>
-</html>
+    <!-- Card 2 -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon green">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <span class="stat-change positive">+8%</span>
+        </div>
+        <h3 class="stat-label">Total Pendapatan</h3>
+        <p class="stat-value">Rp 45.5jt</p>
+        <p class="stat-period">Bulan ini</p>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon purple">
+                <i class="fas fa-users"></i>
+            </div>
+            <span class="stat-change positive">+24</span>
+        </div>
+        <h3 class="stat-label">Pelanggan Baru</h3>
+        <p class="stat-value">89</p>
+        <p class="stat-period">Bulan ini</p>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon orange">
+                <i class="fas fa-building"></i>
+            </div>
+            <span class="stat-change neutral">12 Total</span>
+        </div>
+        <h3 class="stat-label">Lapangan Aktif</h3>
+        <p class="stat-value">12</p>
+        <p class="stat-period">Semua tersedia</p>
+    </div>
+</div>
+
+<!-- Charts and Tables -->
+<div class="content-grid">
+
+    <!-- Recent Bookings -->
+    <div class="table-card">
+        <div class="card-header">
+            <h3>Booking Terbaru</h3>
+            <a href="#" class="view-all">Lihat Semua</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Pelanggan</th>
+                        <th>Lapangan</th>
+                        <th>Tanggal</th>
+                        <th>Status</th>
+                        <th class="text-right">Harga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="customer-info">
+                                <div class="customer-avatar blue">JD</div>
+                                <div>
+                                    <p class="customer-name">John Doe</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Futsal A</td>
+                        <td class="text-muted">27 Des, 16:00</td>
+                        <td>
+                            <span class="status-badge success">Lunas</span>
+                        </td>
+                        <td class="text-right"><strong>Rp 150K</strong></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="customer-info">
+                                <div class="customer-avatar purple">AS</div>
+                                <div>
+                                    <p class="customer-name">Alice Smith</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Basket B</td>
+                        <td class="text-muted">28 Des, 18:00</td>
+                        <td>
+                            <span class="status-badge warning">Pending</span>
+                        </td>
+                        <td class="text-right"><strong>Rp 200K</strong></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="customer-info">
+                                <div class="customer-avatar green">BW</div>
+                                <div>
+                                    <p class="customer-name">Bob Williams</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Volly C</td>
+                        <td class="text-muted">29 Des, 20:00</td>
+                        <td>
+                            <span class="status-badge danger">Batal</span>
+                        </td>
+                        <td class="text-right"><strong>Rp 0K</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Revenue Chart Placeholder -->
+    <div class="chart-card">
+        <h3>Pendapatan Bulanan</h3>
+        <div class="chart-placeholder">
+            <p>Grafik Pendapatan Akan Ditampilkan Di Sini</p>
+        </div>
+    </div>
+</div>
+</div>
+</main>
+</div>
+
+<?php
+// Get buffered content and include layout
+$page_content = ob_get_clean();
+include '../includes/admin-layout.php';
+?>

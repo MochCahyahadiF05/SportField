@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 18, 2026 at 05:04 PM
+-- Generation Time: Jan 19, 2026 at 02:44 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -50,6 +50,18 @@ CREATE TABLE `fasilitas` (
   `nama` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `fasilitas`
+--
+
+INSERT INTO `fasilitas` (`id`, `nama`) VALUES
+(1, 'AC'),
+(2, 'Lighting'),
+(3, 'Tribun'),
+(4, 'Warung'),
+(5, 'Fasilitas 5'),
+(6, 'Fasilitas 6');
+
 -- --------------------------------------------------------
 
 --
@@ -66,6 +78,29 @@ CREATE TABLE `jadwal` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `jenis_olahraga`
+--
+
+CREATE TABLE `jenis_olahraga` (
+  `id` int(11) NOT NULL,
+  `nama` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `jenis_olahraga`
+--
+
+INSERT INTO `jenis_olahraga` (`id`, `nama`) VALUES
+(2, 'Badminton'),
+(4, 'Basket'),
+(1, 'Futsal'),
+(6, 'Pingpong'),
+(5, 'Tenis'),
+(3, 'Voli');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `lapangan`
 --
 
@@ -75,12 +110,22 @@ CREATE TABLE `lapangan` (
   `jenis` varchar(50) NOT NULL,
   `harga_per_jam` decimal(10,2) NOT NULL,
   `deskripsi` text DEFAULT NULL,
+  `gambar` varchar(255) DEFAULT NULL,
   `status` enum('tersedia','maintenance') DEFAULT 'tersedia',
   `average_rating` decimal(2,1) DEFAULT 0.0,
   `total_rating` int(11) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `lapangan`
+--
+
+INSERT INTO `lapangan` (`id`, `nama`, `jenis`, `harga_per_jam`, `deskripsi`, `gambar`, `status`, `average_rating`, `total_rating`, `created_at`, `updated_at`) VALUES
+(5, 'Lapangan A', 'Futsal', 100000.00, 'Lapangan A Description', 'assets/img/lapangan/1768756335_Screenshot_2025-11-19_161655.png', 'tersedia', 0.0, 0, '2026-01-18 17:02:38', '2026-01-18 17:12:15'),
+(7, 'Lapangan C', 'Voli', 90000.00, 'Lapangan C Description', 'assets/img/lapangan/1768756295_Gajah_Kartu.png', 'maintenance', 0.0, 0, '2026-01-18 17:02:38', '2026-01-18 17:11:35'),
+(9, 'Badminton Court', 'Badminton', 20000.00, 'asdasdasx', 'assets/img/lapangan/1768756218_logo.jpeg', 'tersedia', 0.0, 0, '2026-01-18 17:10:18', '2026-01-18 17:10:18');
 
 -- --------------------------------------------------------
 
@@ -93,6 +138,18 @@ CREATE TABLE `lapangan_fasilitas` (
   `lapangan_id` int(11) NOT NULL,
   `fasilitas_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `lapangan_fasilitas`
+--
+
+INSERT INTO `lapangan_fasilitas` (`id`, `lapangan_id`, `fasilitas_id`) VALUES
+(30, 7, 2),
+(31, 7, 3),
+(35, 5, 1),
+(36, 5, 2),
+(37, 9, 2),
+(38, 9, 5);
 
 -- --------------------------------------------------------
 
@@ -179,10 +236,18 @@ ALTER TABLE `jadwal`
   ADD KEY `lapangan_id` (`lapangan_id`);
 
 --
+-- Indexes for table `jenis_olahraga`
+--
+ALTER TABLE `jenis_olahraga`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nama` (`nama`);
+
+--
 -- Indexes for table `lapangan`
 --
 ALTER TABLE `lapangan`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_nama` (`nama`);
 
 --
 -- Indexes for table `lapangan_fasilitas`
@@ -229,7 +294,7 @@ ALTER TABLE `booking`
 -- AUTO_INCREMENT for table `fasilitas`
 --
 ALTER TABLE `fasilitas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `jadwal`
@@ -238,16 +303,22 @@ ALTER TABLE `jadwal`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `jenis_olahraga`
+--
+ALTER TABLE `jenis_olahraga`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- AUTO_INCREMENT for table `lapangan`
 --
 ALTER TABLE `lapangan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `lapangan_fasilitas`
 --
 ALTER TABLE `lapangan_fasilitas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `pembayaran`

@@ -1,3 +1,16 @@
+<?php
+require_once 'config/db.php';
+
+// Query lapangan dengan rating tertinggi, status tersedia, max 3
+$query = "SELECT l.*, j.nama as jenis_nama 
+          FROM lapangan l 
+          LEFT JOIN jenis_olahraga j ON l.jenis = j.id 
+          WHERE l.status = 'tersedia' 
+          ORDER BY l.average_rating DESC, l.total_rating DESC 
+          LIMIT 3";
+$stmt = $pdo->query($query);
+$lapangan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -137,80 +150,44 @@
             </div>
 
             <div class="cards-grid">
-                <!-- Card 1 -->
-                <div class="field-card">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=500&auto=format&fit=crop" alt="Futsal Premium">
+                <?php if (empty($lapangan_list)): ?>
+                    <div style="text-align: center; padding: 40px; grid-column: 1/-1;">
+                        <p>Belum ada lapangan tersedia</p>
                     </div>
-                    <div class="card-body">
-                        <div class="card-header">
-                            <h3>Futsal A</h3>
-                            <span class="badge-type">Indoor</span>
-                        </div>
-                        <p class="card-description">Rumput sintetis premium dengan pencahayaan LED</p>
-                        <div class="card-footer">
-                            <div class="price">
-                                <span class="price-amount">150K</span>
-                                <span class="price-unit">/jam</span>
+                <?php else: ?>
+                    <?php foreach ($lapangan_list as $lap): ?>
+                        <div class="field-card">
+                            <div class="card-image">
+                                <?php 
+                                $image_path = !empty($lap['gambar']) ? 'assets/img/lapangan/' . basename($lap['gambar']) : '';
+                                if ($image_path && file_exists($image_path)): 
+                                ?>
+                                    <img src="<?php echo htmlspecialchars($image_path); ?>" alt="<?php echo htmlspecialchars($lap['nama']); ?>">
+                                <?php else: ?>
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='300'%3E%3Crect width='500' height='300' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='18' font-family='sans-serif'%3EGambar Tidak Tersedia%3C/text%3E%3C/svg%3E" alt="Tidak ada gambar">
+                                <?php endif; ?>
                             </div>
-                            <div class="rating">
-                                <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.8</span>
-                            </div>
-                        </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="field-card">
-                    <div class="card-image">
-                        <img src="https://www.shutterstock.com/image-illustration/aerial-view-green-badminton-court-600nw-2577679075.jpg" alt="Badminton Indoor">
-                    </div>
-                    <div class="card-body">
-                        <div class="card-header">
-                            <h3>Badminton</h3>
-                            <span class="badge-type">Indoor</span>
-                        </div>
-                        <p class="card-description">Full AC dengan karpet kualitas internasional</p>
-                        <div class="card-footer">
-                            <div class="price">
-                                <span class="price-amount">80K</span>
-                                <span class="price-unit">/jam</span>
-                            </div>
-                            <div class="rating">
-                                <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.9</span>
+                            <div class="card-body">
+                                <div class="card-header">
+                                    <h3><?php echo htmlspecialchars($lap['nama']); ?></h3>
+                                    <span class="badge-type"><?php echo htmlspecialchars($lap['jenis_nama'] ?? 'Olahraga'); ?></span>
+                                </div>
+                                <p class="card-description"><?php echo htmlspecialchars(substr($lap['deskripsi'], 0, 60)); ?>...</p>
+                                <div class="card-footer">
+                                    <div class="price">
+                                        <span class="price-amount"><?php echo number_format($lap['harga_per_jam'] / 1000, 0); ?>K</span>
+                                        <span class="price-unit">/jam</span>
+                                    </div>
+                                    <div class="rating">
+                                        <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                                        <span><?php echo number_format($lap['average_rating'], 1); ?></span>
+                                    </div>
+                                </div>
+                                <a href="page/user/detail-lapangan.php?id=<?php echo $lap['id']; ?>" class="btn-booking">Booking Sekarang</a>
                             </div>
                         </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
-                    </div>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="field-card">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?q=80&w=500&auto=format&fit=crop" alt="Voli Beach">
-                    </div>
-                    <div class="card-body">
-                        <div class="card-header">
-                            <h3>Voli Beach</h3>
-                            <span class="badge-type">Outdoor</span>
-                        </div>
-                        <p class="card-description">Pasir impor dengan standar professional</p>
-                        <div class="card-footer">
-                            <div class="price">
-                                <span class="price-amount">100K</span>
-                                <span class="price-unit">/jam</span>
-                            </div>
-                            <div class="rating">
-                                <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.7</span>
-                            </div>
-                        </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </section>

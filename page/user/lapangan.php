@@ -1,3 +1,38 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once '../../config/db.php';
+
+// Get all fields
+try {
+    $stmt = $pdo->prepare("
+        SELECT l.*, 
+               GROUP_CONCAT(f.nama SEPARATOR ',') as fasilitas,
+               jenis_olahraga.nama as jenis_nama
+        FROM lapangan l
+        LEFT JOIN lapangan_fasilitas lf ON l.id = lf.lapangan_id
+        LEFT JOIN fasilitas f ON lf.fasilitas_id = f.id
+        LEFT JOIN jenis_olahraga ON l.jenis = jenis_olahraga.nama
+        WHERE l.status = 'tersedia'
+        GROUP BY l.id
+        ORDER BY l.nama
+    ");
+    $stmt->execute();
+    $lapangan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $lapangan_list = [];
+}
+
+// Get all jenis olahraga for filter
+try {
+    $stmt = $pdo->query("SELECT id, nama FROM jenis_olahraga ORDER BY nama");
+    $jenis_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $jenis_list = [];
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -10,12 +45,13 @@
 <body>
     <!-- Navigation -->
     <?php include '../includes/navbar.php'; ?>
+    
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="container text-center">
             <div class="animate-fade-in">
                 <div class="badge">
-                    <span>🏟️ 12 Lapangan Tersedia</span>
+                    <span>🏟️ <?php echo count($lapangan_list); ?> Lapangan Tersedia</span>
                 </div>
                 <h1 class="hero-title">
                     <span class="gradient-text">Pilih Lapangan</span>
@@ -39,11 +75,11 @@
                         <label>Kategori Olahraga</label>
                         <select id="categorySelect" onchange="filterCategory(this.value)" class="sort-select">
                             <option value="all">Semua Kategori</option>
-                            <option value="futsal">Futsal</option>
-                            <option value="badminton"> Badminton</option>
-                            <option value="voli">Voli</option>
-                            <option value="basket">Basket</option>
-                            <option value="tenis">Tenis</option>
+                            <?php foreach ($jenis_list as $jenis): ?>
+                            <option value="<?php echo strtolower(htmlspecialchars($jenis['nama'])); ?>">
+                                <?php echo htmlspecialchars($jenis['nama']); ?>
+                            </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
@@ -71,79 +107,48 @@
     <section class="fields-section">
         <div class="container">
             <div id="fieldsGrid" class="fields-grid">
-                <!-- Futsal Cards -->
-                <div class="field-card" data-category="futsal" data-price="150000" data-rating="4.8" data-name="Futsal A">
+                <?php foreach ($lapangan_list as $lapangan): ?>
+                <div class="field-card" 
+                     data-category="<?php echo strtolower($lapangan['jenis']); ?>" 
+                     data-price="<?php echo $lapangan['harga_per_jam']; ?>" 
+                     data-rating="<?php echo $lapangan['average_rating']; ?>" 
+                     data-name="<?php echo htmlspecialchars($lapangan['nama']); ?>">
                     <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=500&auto=format&fit=crop" alt="Futsal A">
+                        <?php
+                        $gambar_src = '';
+                        if (!empty($lapangan['gambar'])) {
+                            $gambar_src = '../../' . htmlspecialchars($lapangan['gambar']);
+                        } else {
+                            $gambar_src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22500%22 height=%22300%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22500%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2218%22 fill=%22%23999%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EGambar Tidak Tersedia%3C/text%3E%3C/svg%3E';
+                        }
+                        ?>
+                        <img src="<?php echo $gambar_src; ?>" alt="<?php echo htmlspecialchars($lapangan['nama']); ?>">
                     </div>
                     <div class="card-body">
                         <div class="card-header">
-                            <h3>Futsal A</h3>
-                            <span class="badge-type">Indoor</span>
+                            <h3><?php echo htmlspecialchars($lapangan['nama']); ?></h3>
+                            <span class="badge-type"><?php echo htmlspecialchars($lapangan['jenis']); ?></span>
                         </div>
-                        <p class="card-description">Rumput sintetis premium dengan pencahayaan LED</p>
+                        <p class="card-description">
+                            <?php 
+                            $fasilitas = explode(',', $lapangan['fasilitas']);
+                            echo htmlspecialchars(implode(', ', array_slice(array_filter($fasilitas), 0, 2)));
+                            ?>
+                        </p>
                         <div class="card-footer">
                             <div class="price">
-                                <span class="price-amount">150K</span>
+                                <span class="price-amount">Rp <?php echo number_format($lapangan['harga_per_jam'], 0, ',', '.'); ?></span>
                                 <span class="price-unit">/jam</span>
                             </div>
                             <div class="rating">
                                 <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.8</span>
+                                <span><?php echo number_format($lapangan['average_rating'], 1); ?></span>
                             </div>
                         </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
+                        <a href="detail-lapangan.php?id=<?php echo $lapangan['id']; ?>" class="btn-booking">Booking Sekarang</a>
                     </div>
                 </div>
-
-                <div class="field-card" data-category="futsal" data-price="160000" data-rating="4.9" data-name="Futsal B">
-                    <div class="card-image">
-                        <img src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=500&auto=format&fit=crop" alt="Futsal B">
-                    </div>
-                    <div class="card-body">
-                        <div class="card-header">
-                            <h3>Futsal B</h3>
-                            <span class="badge-type">Indoor</span>
-                        </div>
-                        <p class="card-description">Full AC dengan sound system premium</p>
-                        <div class="card-footer">
-                            <div class="price">
-                                <span class="price-amount">160K</span>
-                                <span class="price-unit">/jam</span>
-                            </div>
-                            <div class="rating">
-                                <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.9</span>
-                            </div>
-                        </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
-                    </div>
-                </div>
-
-                <!-- Badminton Cards -->
-                <div class="field-card" data-category="badminton" data-price="80000" data-rating="4.9" data-name="Badminton Court 1">
-                    <div class="card-image">
-                        <img src="https://www.shutterstock.com/image-illustration/aerial-view-green-badminton-court-600nw-2577679075.jpg" alt="Badminton Court 1">
-                    </div>
-                    <div class="card-body">
-                        <div class="card-header">
-                            <h3>Badminton 1</h3>
-                            <span class="badge-type">Indoor</span>
-                        </div>
-                        <p class="card-description">Full AC dengan karpet kualitas internasional</p>
-                        <div class="card-footer">
-                            <div class="price">
-                                <span class="price-amount">80K</span>
-                                <span class="price-unit">/jam</span>
-                            </div>
-                            <div class="rating">
-                                <svg class="star-icon" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                <span>4.9</span>
-                            </div>
-                        </div>
-                        <a href="detail_lapangan.html" class="btn-booking">Booking Sekarang</a>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
 
             <!-- No Results Message -->

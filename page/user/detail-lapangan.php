@@ -1,67 +1,103 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once '../../config/db.php';
+
+// Get lapangan_id dari URL
+$lapangan_id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
+
+// Query lapangan data
+try {
+    $stmt = $pdo->prepare("SELECT * FROM lapangan WHERE id = ?");
+    $stmt->execute([$lapangan_id]);
+    $lapangan = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$lapangan) {
+        die("Lapangan tidak ditemukan");
+    }
+
+    // Get fasilitas
+    $stmt = $pdo->prepare(
+        "SELECT f.nama FROM fasilitas f 
+         INNER JOIN lapangan_fasilitas lf ON f.id = lf.fasilitas_id 
+         WHERE lf.lapangan_id = ?"
+    );
+    $stmt->execute([$lapangan_id]);
+    $fasilitas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get ratings/ulasan
+    $stmt = $pdo->prepare(
+        "SELECT r.id, r.rating, r.review, r.created_at, r.user_id, u.name 
+         FROM ratings r
+         INNER JOIN users u ON r.user_id = u.id
+         WHERE r.lapangan_id = ?
+         ORDER BY r.created_at DESC
+         LIMIT 5"
+    );
+    $stmt->execute([$lapangan_id]);
+    $ulasan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+    die("Error: " . $e->getMessage());
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Lapangan - SportField</title>
-    <link rel="stylesheet" href="/assets/css/detail-lapangan.css">
+    <title>Detail <?php echo htmlspecialchars($lapangan['nama']); ?> - SportField</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/detail-lapangan.css">
+    <link rel="stylesheet" href="../../assets/css/navbar-footer.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-content">
-                <div class="nav-logo">
-                    <div class="logo-icon">
-                        <span>SF</span>
-                    </div>
-                    <h1 class="logo-text">SportField</h1>
-                </div>
-                <ul class="nav-menu">
-                    <li><a href="index2.html">Beranda</a></li>
-                    <li><a href="lapangan.html">Lapangan</a></li>
-                    <li><a href="#">Kontak</a></li>
-                </ul>
-                <div class="nav-actions">
-                    <a href="login.html" class="btn-login">Login</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <input type="hidden" id="lapanganId" value="<?php echo $lapangan_id; ?>">
+    <input type="hidden" id="lapanganNama" value="<?php echo htmlspecialchars($lapangan['nama']); ?>">
+    <input type="hidden" id="hargaPerJam" value="<?php echo $lapangan['harga_per_jam']; ?>">
+
+    <?php include '../includes/navbar.php'; ?>
 
     <main class="main-content">
         <div class="container">
             <div class="breadcrumb">
-                <a href="#">Beranda</a>
+                <a href="../../index.php">Beranda</a>
                 <span>/</span>
-                <a href="#">Lapangan</a>
+                <a href="lapangan.php">Lapangan</a>
                 <span>/</span>
-                <span class="active">Futsal A</span>
+                <span class="active"><?php echo htmlspecialchars($lapangan['nama']); ?></span>
             </div>
 
             <div class="content-grid">
                 <div class="left-column">
                     <div class="gallery-section">
-                        <div id="mainImage" class="main-image" style="background-image: url('https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2070&auto=format&fit=crop');">
-                            <div class="badge-indoor">Indoor</div>
+                        <div class="main-image">
+                            <?php
+                            $gambar_src = '';
+                            if (!empty($lapangan['gambar'])) {
+                                $gambar_src = '../../' . htmlspecialchars($lapangan['gambar']);
+                            } else {
+                                // Placeholder - base64 encoded gray image
+                                $gambar_src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22500%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22800%22 height=%22500%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23999%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EGambar Tidak Tersedia%3C/text%3E%3C/svg%3E';
+                            }
+                            ?>
+                            <img src="<?php echo $gambar_src; ?>" alt="<?php echo htmlspecialchars($lapangan['nama']); ?>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px;">
+                            <div class="badge-indoor"><?php echo htmlspecialchars($lapangan['jenis']); ?></div>
                             <div class="image-overlay"></div>
-                        </div>
-                        <div class="thumbnail-grid">
-                            <div class="thumbnail active" style="background-image: url('https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2070&auto=format&fit=crop');" onclick="changeMainImage(this)"></div>
-                            <div class="thumbnail" style="background-image: url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2070&auto=format&fit=crop');" onclick="changeMainImage(this)"></div>
-                            <div class="thumbnail" style="background-image: url('https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=2071&auto=format&fit=crop');" onclick="changeMainImage(this)"></div>
-                            <div class="thumbnail" style="background-image: url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=2070&auto=format&fit=crop');" onclick="changeMainImage(this)"></div>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
                             <div>
-                                <h1 class="field-title">Lapangan Futsal A</h1>
+                                <h1 class="field-title"><?php echo htmlspecialchars($lapangan['nama']); ?></h1>
                                 <div class="field-meta">
                                     <div class="rating">
                                         <svg class="star" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                        <span class="rating-number">4.8</span>
-                                        <span class="review-count">(124 ulasan)</span>
+                                        <span class="rating-number"><?php echo number_format($lapangan['average_rating'], 1); ?></span>
+                                        <span class="review-count">(<?php echo $lapangan['total_rating']; ?> ulasan)</span>
                                     </div>
                                     <span>•</span>
                                     <span>📍 Bandung, Indonesia</span>
@@ -69,7 +105,7 @@
                             </div>
                             <div class="price-section">
                                 <div class="price-label">Mulai dari</div>
-                                <div class="price-amount">150K</div>
+                                <div class="price-amount">Rp <?php echo number_format($lapangan['harga_per_jam'], 0, ',', '.'); ?></div>
                                 <div class="price-unit">per jam</div>
                             </div>
                         </div>
@@ -77,121 +113,102 @@
                         <div class="card-content">
                             <h2 class="section-title">Tentang Lapangan</h2>
                             <p class="description">
-                                Lapangan futsal indoor dengan rumput sintetis premium berkualitas internasional. Dilengkapi dengan sistem pencahayaan LED yang sempurna untuk bermain kapan saja. Fasilitas modern dengan ruang ganti yang nyaman dan area penonton yang luas.
+                                <?php echo nl2br(htmlspecialchars($lapangan['deskripsi'] ?? 'Lapangan olahraga berkualitas tinggi dengan fasilitas lengkap')); ?>
                             </p>
-
-                            <h3 class="subsection-title">Spesifikasi</h3>
-                            <div class="specs-grid">
-                                <div class="spec-item">
-                                    <div class="spec-icon">📏</div>
-                                    <div>
-                                        <div class="spec-label">Ukuran</div>
-                                        <div class="spec-value">40m x 20m</div>
-                                    </div>
-                                </div>
-                                <div class="spec-item">
-                                    <div class="spec-icon">👥</div>
-                                    <div>
-                                        <div class="spec-label">Kapasitas</div>
-                                        <div class="spec-value">10-12 pemain</div>
-                                    </div>
-                                </div>
-                                <div class="spec-item">
-                                    <div class="spec-icon">🌱</div>
-                                    <div>
-                                        <div class="spec-label">Permukaan</div>
-                                        <div class="spec-value">Rumput Sintetis</div>
-                                    </div>
-                                </div>
-                                <div class="spec-item">
-                                    <div class="spec-icon">💡</div>
-                                    <div>
-                                        <div class="spec-label">Pencahayaan</div>
-                                        <div class="spec-value">LED Premium</div>
-                                    </div>
-                                </div>
-                            </div>
 
                             <h3 class="subsection-title">Fasilitas Tersedia</h3>
                             <div class="facilities-grid">
-                                <div class="facility-item">
-                                    <span class="facility-icon">🚿</span>
-                                    <span class="facility-label">Shower</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">👕</span>
-                                    <span class="facility-label">Loker</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">🅿️</span>
-                                    <span class="facility-label">Parkir</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">🏪</span>
-                                    <span class="facility-label">Kantin</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">❄️</span>
-                                    <span class="facility-label">AC</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">📶</span>
-                                    <span class="facility-label">WiFi</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">🎥</span>
-                                    <span class="facility-label">CCTV</span>
-                                </div>
-                                <div class="facility-item">
-                                    <span class="facility-icon">🏥</span>
-                                    <span class="facility-label">P3K</span>
-                                </div>
+                                <?php
+                                foreach ($fasilitas as $f) {
+                                    echo '
+                                    <div class="facility-item">
+                                        <div class="facility-label">' . htmlspecialchars($f['nama']) . '</div>
+                                    </div>
+                                    ';
+                                }
+                                ?>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h2 class="section-title">Ulasan Pelanggan</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 class="section-title" style="margin: 0;">Ulasan Pelanggan</h2>
+                            <button onclick="openRatingModal()" class="btn-small" style="padding: 8px 16px; font-size: 14px;">+ Beri Rating</button>
+                        </div>
                         <div class="reviews">
-                            <div class="review-item">
-                                <div class="review-avatar">AH</div>
-                                <div class="review-content">
-                                    <div class="review-header">
-                                        <div>
-                                            <div class="reviewer-name">Ahmad Hidayat</div>
-                                            <div class="review-date">2 hari yang lalu</div>
-                                        </div>
-                                        <div class="review-stars">
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                        </div>
+                            <?php if (count($ulasan_list) > 0): ?>
+                                <?php foreach ($ulasan_list as $ulasan): ?>
+                                <div class="review-item">
+                                    <div class="review-avatar">
+                                        <?php 
+                                        $nama = htmlspecialchars($ulasan['name']);
+                                        $initials = strtoupper(substr($nama, 0, 1)) . strtoupper(substr(strrchr($nama, ' '), 1, 1));
+                                        echo $initials;
+                                        ?>
                                     </div>
-                                    <p class="review-text">Lapangan sangat bagus dan terawat. Rumput sintetisnya empuk dan nyaman. Fasilitasnya lengkap, ruang gantinya bersih. Pasti akan booking lagi!</p>
-                                </div>
-                            </div>
-
-                            <div class="review-item">
-                                <div class="review-avatar">RP</div>
-                                <div class="review-content">
-                                    <div class="review-header">
-                                        <div>
-                                            <div class="reviewer-name">Rizki Pratama</div>
-                                            <div class="review-date">1 minggu yang lalu</div>
+                                    <div class="review-content">
+                                        <div class="review-header">
+                                            <div>
+                                                <div class="reviewer-name"><?php echo $nama; ?></div>
+                                                <div class="review-stars">
+                                                    <?php 
+                                                    $rating = (int)$ulasan['rating'];
+                                                    for ($i = 1; $i <= 5; $i++) {
+                                                        $filled = $i <= $rating ? 'filled' : '';
+                                                        echo '<svg class="star ' . $filled . '" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>';
+                                                    }
+                                                    ?>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                <div class="review-date">
+                                                    <?php 
+                                                    $date = new DateTime($ulasan['created_at']);
+                                                    $now = new DateTime();
+                                                    $diff = $now->diff($date);
+                                                    
+                                                    if ($diff->days == 0) {
+                                                        echo 'Hari ini';
+                                                    } elseif ($diff->days == 1) {
+                                                        echo 'Kemarin';
+                                                    } elseif ($diff->days < 7) {
+                                                        echo $diff->days . ' hari lalu';
+                                                    } elseif ($diff->days < 30) {
+                                                        echo ceil($diff->days / 7) . ' minggu lalu';
+                                                    } else {
+                                                        echo ceil($diff->days / 30) . ' bulan lalu';
+                                                    }
+                                                    ?>
+                                                </div>
+                                                <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $ulasan['user_id']): ?>
+                                                <div class="review-menu">
+                                                    <button onclick="toggleReviewMenu(this)" class="btn-menu" title="Menu">
+                                                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M10.5 1.5H9.5V3.5H10.5V1.5ZM10.5 8.5H9.5V10.5H10.5V8.5ZM10.5 15.5H9.5V17.5H10.5V15.5Z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="menu-dropdown">
+                                                        <button onclick="editRating(<?php echo $ulasan['id']; ?>, <?php echo $ulasan['rating']; ?>, '<?php echo htmlspecialchars(addslashes($ulasan['review'])); ?>')" class="menu-item">
+                                                            <i class="fas fa-edit"></i> Edit
+                                                        </button>
+                                                        <button onclick="deleteRating(<?php echo $ulasan['id']; ?>)" class="menu-item delete">
+                                                            <i class="fas fa-trash"></i> Hapus
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                        <div class="review-stars">
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star filled" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                            <svg class="star" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                                        </div>
+                                        <?php if (!empty($ulasan['review'])): ?>
+                                        <p class="review-text"><?php echo htmlspecialchars($ulasan['review']); ?></p>
+                                        <?php endif; ?>
                                     </div>
-                                    <p class="review-text">Lokasi strategis dan mudah dijangkau. Harga sesuai dengan kualitas yang diberikan. Recommended!</p>
                                 </div>
-                            </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p style="text-align: center; color: #999; padding: 20px;">Belum ada ulasan untuk lapangan ini. Jadilah yang pertama memberikan ulasan!</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -203,7 +220,8 @@
                         <div class="booking-form">
                             <div class="form-group">
                                 <label>Pilih Tanggal</label>
-                                <input type="date" id="bookingDate" onchange="updatePrice()">
+                                <input type="date" id="bookingDate" onchange="updateAvailableHours()">
+                                <small id="dateError" style="color: red; display: none;"></small>
                             </div>
 
                             <div class="form-group">
@@ -215,16 +233,16 @@
                                     <option value="08:00">08:00</option>
                                     <option value="09:00">09:00</option>
                                     <option value="10:00">10:00</option>
-                                    <option value="11:00" disabled>11:00 (Sudah Dibooking)</option>
+                                    <option value="11:00">11:00</option>
                                     <option value="12:00">12:00</option>
                                     <option value="13:00">13:00</option>
-                                    <option value="14:00" disabled>14:00 (Sudah Dibooking)</option>
+                                    <option value="14:00">14:00</option>
                                     <option value="15:00">15:00</option>
                                     <option value="16:00">16:00</option>
                                     <option value="17:00">17:00</option>
                                     <option value="18:00">18:00</option>
                                     <option value="19:00">19:00</option>
-                                    <option value="20:00" disabled>20:00 (Sudah Dibooking)</option>
+                                    <option value="20:00">20:00</option>
                                     <option value="21:00">21:00</option>
                                     <option value="22:00">22:00</option>
                                 </select>
@@ -239,16 +257,16 @@
                                     <option value="09:00">09:00</option>
                                     <option value="10:00">10:00</option>
                                     <option value="11:00">11:00</option>
-                                    <option value="12:00" disabled>12:00 (Sudah Dibooking)</option>
+                                    <option value="12:00">12:00</option>
                                     <option value="13:00">13:00</option>
                                     <option value="14:00">14:00</option>
-                                    <option value="15:00" disabled>15:00 (Sudah Dibooking)</option>
+                                    <option value="15:00">15:00</option>
                                     <option value="16:00">16:00</option>
                                     <option value="17:00">17:00</option>
                                     <option value="18:00">18:00</option>
                                     <option value="19:00">19:00</option>
                                     <option value="20:00">20:00</option>
-                                    <option value="21:00" disabled>21:00 (Sudah Dibooking)</option>
+                                    <option value="21:00">21:00</option>
                                     <option value="22:00">22:00</option>
                                     <option value="23:00">23:00</option>
                                 </select>
@@ -257,7 +275,7 @@
                             <div class="total-section">
                                 <div class="total-row">
                                     <span class="total-label">Total Harga</span>
-                                    <span id="totalPrice" class="total-price">150K</span>
+                                    <span id="totalPrice" class="total-price">Rp 0</span>
                                 </div>
                                 <button onclick="openPaymentModal()" class="btn-payment">Lanjut ke Pembayaran</button>
                             </div>
@@ -286,7 +304,7 @@
                     <div class="booking-summary">
                         <div class="summary-row">
                             <span class="summary-label">Lapangan</span>
-                            <span class="summary-value">Futsal A</span>
+                            <span class="summary-value" id="modalLapangan">-</span>
                         </div>
                         <div class="summary-row">
                             <span class="summary-label">Tanggal</span>
@@ -310,32 +328,53 @@
                         <label class="method-label">Metode Pembayaran</label>
                         <div class="method-options">
                             <div class="method-option active">
-                                <input type="radio" id="bca" name="payment" value="bca" checked>
-                                <label for="bca">Transfer Bank BCA</label>
+                                <input type="radio" id="transfer" name="payment" value="transfer" checked onchange="showPaymentDetails()">
+                                <label for="transfer">Transfer Bank</label>
                             </div>
                             <div class="method-option">
-                                <input type="radio" id="mandiri" name="payment" value="mandiri">
-                                <label for="mandiri">Transfer Bank Mandiri</label>
+                                <input type="radio" id="qris" name="payment" value="qris" onchange="showPaymentDetails()">
+                                <label for="qris">QRIS</label>
                             </div>
-                            <div class="method-option">
-                                <input type="radio" id="gopay" name="payment" value="gopay">
-                                <label for="gopay">GoPay</label>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details Section -->
+                    <div id="paymentDetails" class="payment-details">
+                        <!-- Transfer Bank Details -->
+                        <div id="transferDetails" class="payment-detail-box">
+                            <h4>Rincian Transfer Bank</h4>
+                            <div class="detail-item">
+                                <span class="detail-label">Bank</span>
+                                <span class="detail-value">BCA</span>
                             </div>
-                            <div class="method-option">
-                                <input type="radio" id="ovo" name="payment" value="ovo">
-                                <label for="ovo">OVO</label>
+                            <div class="detail-item">
+                                <span class="detail-label">Nomor Rekening</span>
+                                <span class="detail-value" style="font-weight: bold; font-size: 16px;">1234567890</span>
                             </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Atas Nama</span>
+                                <span class="detail-value">SportField Indonesia</span>
+                            </div>
+                        </div>
+
+                        <!-- QRIS Details -->
+                        <div id="qrisDetails" class="payment-detail-box" style="display: none;">
+                            <h4>Scan QRIS</h4>
+                            <div class="qris-code">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126360014com.midtrans.www51590010A000000000111301234560215A000000000111301234566004000011630400015F34038B8B50520400005303360540101215000705020304061406202412311634073000002120563074646000016D0117000024150014ID.CO.MIDTRANS20100217000101000000000000000034076850014br.gov.bcb.dict000161000161000161000161000150014br.gov.bcb.brcode010121134680016ID.CO.MIDTRANS01051.0520400005303360540101215000705020304061406202412315F34038B8B5052040000530336054010121500070502030406146302C4310Cc3000002120563074646000016D0117000024150014ID.CO.MIDTRANS20100217000101000000000000000034076850014br.gov.bcb.dict000161000161000161000161000150014br.gov.bcb.brcode010121134680016ID.CO.MIDTRANS01051.0520400005303360540101215000705020304061406202412315F34038B8B5052040000530336054010121500070502030406146D8E63047D5D" alt="QRIS Code" style="width: 200px; height: 200px;">
+                            </div>
+                            <p style="text-align: center; color: #666; margin-top: 10px;">Scan dengan aplikasi pembayaran mobile Anda</p>
                         </div>
                     </div>
 
                     <div class="info-box">
                         <div class="info-content">
                             <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-1a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"></path>
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                             </svg>
                             <div>
-                                <p class="info-title">Catatan Penting</p>
-                                <p class="info-text">Pembayaran harus selesai dalam 30 menit agar booking dapat dikonfirmasi.</p>
+                                <strong>Penting!</strong>
+                                <p>Setelah pembayaran berhasil, segera upload bukti pembayaran untuk mengkonfirmasi pesanan Anda.</p>
                             </div>
                         </div>
                     </div>
@@ -353,9 +392,10 @@
                         <div id="uploadedFile" class="uploaded-file">
                             <div class="file-info">
                                 <svg class="file-icon" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    <path fill-rule="evenodd" d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
+                                    <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 10H17a1 1 0 001-1v-3a1 1 0 00-1-1h-3z"></path>
                                 </svg>
-                                <span id="fileName"></span>
+                                <span id="fileName">-</span>
                             </div>
                         </div>
                     </div>
@@ -363,12 +403,53 @@
 
                 <div class="modal-footer">
                     <button onclick="closePaymentModal()" class="btn-cancel">Batal</button>
-                    <button class="btn-confirm">Lanjut Pembayaran</button>
+                    <button onclick="submitPayment()" class="btn-confirm">Lanjut Pembayaran</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="/assets/js/detail-lapangan.js"></script>
+    <!-- Modal Rating -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-wrapper">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2>Berikan Rating & Ulasan</h2>
+                    <button onclick="closeRatingModal()" class="btn-close">
+                        <svg class="icon-close" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="rating-form">
+                        <label class="form-label">Rating</label>
+                        <div class="star-rating" id="starRating">
+                            <svg class="star-select" data-rating="1" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                            <svg class="star-select" data-rating="2" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                            <svg class="star-select" data-rating="3" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                            <svg class="star-select" data-rating="4" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                            <svg class="star-select" data-rating="5" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                        </div>
+                        <input type="hidden" id="selectedRating" value="0">
+
+                        <label class="form-label" style="margin-top: 20px;">Ulasan (Opsional)</label>
+                        <textarea id="reviewText" class="review-textarea" placeholder="Bagikan pengalaman Anda dengan lapangan ini..." rows="4"></textarea>
+
+                        <input type="hidden" id="ratingLapanganId">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button onclick="closeRatingModal()" class="btn-cancel">Batal</button>
+                    <button onclick="submitRating()" class="btn-confirm">Kirim Rating</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/detail-lapangan.js"></script>
 </body>
 </html>

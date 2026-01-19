@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 19, 2026 at 02:44 PM
+-- Generation Time: Jan 19, 2026 at 06:53 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -38,6 +38,15 @@ CREATE TABLE `booking` (
   `status` enum('pending','confirmed','cancelled','completed') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `booking`
+--
+
+INSERT INTO `booking` (`id`, `user_id`, `lapangan_id`, `tanggal`, `jam_mulai`, `jam_selesai`, `total_harga`, `status`, `created_at`) VALUES
+(1, 2, 5, '2026-01-19', '07:00:00', '23:00:00', 1600000.00, 'pending', '2026-01-19 14:11:29'),
+(2, 2, 9, '2026-01-19', '06:00:00', '10:00:00', 80000.00, 'pending', '2026-01-19 14:12:35'),
+(3, 1, 5, '2026-01-20', '06:00:00', '09:00:00', 300000.00, 'pending', '2026-01-19 15:13:57');
 
 -- --------------------------------------------------------
 
@@ -123,9 +132,9 @@ CREATE TABLE `lapangan` (
 --
 
 INSERT INTO `lapangan` (`id`, `nama`, `jenis`, `harga_per_jam`, `deskripsi`, `gambar`, `status`, `average_rating`, `total_rating`, `created_at`, `updated_at`) VALUES
-(5, 'Lapangan A', 'Futsal', 100000.00, 'Lapangan A Description', 'assets/img/lapangan/1768756335_Screenshot_2025-11-19_161655.png', 'tersedia', 0.0, 0, '2026-01-18 17:02:38', '2026-01-18 17:12:15'),
+(5, 'Lapangan A', 'Futsal', 100000.00, 'Lapangan A Description', 'assets/img/lapangan/1768756295_Gajah_Kartu.png', 'tersedia', 2.0, 1, '2026-01-18 17:02:38', '2026-01-19 15:14:49'),
 (7, 'Lapangan C', 'Voli', 90000.00, 'Lapangan C Description', 'assets/img/lapangan/1768756295_Gajah_Kartu.png', 'maintenance', 0.0, 0, '2026-01-18 17:02:38', '2026-01-18 17:11:35'),
-(9, 'Badminton Court', 'Badminton', 20000.00, 'asdasdasx', 'assets/img/lapangan/1768756218_logo.jpeg', 'tersedia', 0.0, 0, '2026-01-18 17:10:18', '2026-01-18 17:10:18');
+(9, 'Badminton Court', 'Badminton', 20000.00, 'asdasdasx', 'assets/img/lapangan/1768756218_logo.jpeg', 'tersedia', 3.5, 2, '2026-01-18 17:10:18', '2026-01-19 15:00:07');
 
 -- --------------------------------------------------------
 
@@ -162,10 +171,20 @@ CREATE TABLE `pembayaran` (
   `booking_id` int(11) NOT NULL,
   `metode` varchar(50) NOT NULL,
   `jumlah` decimal(10,2) NOT NULL,
-  `status` enum('pending','success','failed') DEFAULT 'pending',
+  `status` enum('pending','success','failed','cancelled','refunded') DEFAULT 'pending',
   `bukti_bayar` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `refund_reason` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pembayaran`
+--
+
+INSERT INTO `pembayaran` (`id`, `booking_id`, `metode`, `jumlah`, `status`, `bukti_bayar`, `created_at`, `refund_reason`) VALUES
+(1, 1, 'qris', 1600000.00, 'pending', 'assets/img/bukti-pembayaran/1768831889_logo.jpeg', '2026-01-19 14:11:29', 'Diminta oleh admin'),
+(2, 2, 'transfer', 80000.00, 'pending', 'assets/img/bukti-pembayaran/1768831955_Gajah_Kartu.png', '2026-01-19 14:12:35', 'Booking dibatalkan oleh admin'),
+(3, 3, 'qris', 300000.00, 'pending', 'assets/img/bukti-pembayaran/1768835637_logo.jpeg', '2026-01-19 15:13:57', 'Booking dibatalkan oleh admin');
 
 -- --------------------------------------------------------
 
@@ -183,6 +202,15 @@ CREATE TABLE `ratings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `ratings`
+--
+
+INSERT INTO `ratings` (`id`, `user_id`, `lapangan_id`, `booking_id`, `rating`, `review`, `created_at`, `updated_at`) VALUES
+(1, 2, 9, NULL, 2, 'bagus bgt', '2026-01-19 14:46:04', '2026-01-19 14:59:04'),
+(2, 1, 9, NULL, 5, 'mantap bgt loh\r\n', '2026-01-19 15:00:07', '2026-01-19 15:00:07'),
+(3, 1, 5, NULL, 2, '', '2026-01-19 15:02:35', '2026-01-19 15:14:49');
 
 -- --------------------------------------------------------
 
@@ -288,7 +316,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `booking`
 --
 ALTER TABLE `booking`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `fasilitas`
@@ -324,13 +352,13 @@ ALTER TABLE `lapangan_fasilitas`
 -- AUTO_INCREMENT for table `pembayaran`
 --
 ALTER TABLE `pembayaran`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `ratings`
 --
 ALTER TABLE `ratings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -367,6 +395,11 @@ ALTER TABLE `lapangan_fasilitas`
 --
 ALTER TABLE `pembayaran`
   ADD CONSTRAINT `pembayaran_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Update pembayaran enum to support 'cancelled' status
+--
+ALTER TABLE `pembayaran` MODIFY COLUMN `status` enum('pending','success','failed','cancelled','refunded') DEFAULT 'pending';
 
 --
 -- Constraints for table `ratings`

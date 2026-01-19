@@ -66,6 +66,7 @@
     </div>
 
     <script src="../../assets/js/admin_js/dashboard.js"></script>
+    <?php echo $page_scripts ?? ''; ?>
 </body>
 
 </html>

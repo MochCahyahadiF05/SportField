@@ -40,11 +40,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const messageAlert = document.getElementById('messageAlert');
 
                 if (data.success) {
-                    messageAlert.innerHTML = `<div style="background: #dcfce7; color: #15803d; padding: 0.75rem 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; font-size: 0.9rem;">${data.message}</div>`;
+                    messageAlert.innerHTML = `<div style="background: #dcfce7; color: #15803d; padding: 0.75rem 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; font-size: 0.9rem;">Registrasi berhasil! Silakan login dengan akun Anda...</div>`;
                     document.getElementById('registerForm').reset();
+                    // Disable form submission to prevent double submission
+                    const submitBtn = registerForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.6';
+                    }
                     setTimeout(() => {
-                        window.location.href = 'login.php';
-                    }, 2000);
+                        // Force page navigation with cache busting
+                        window.location.href = 'login.php?t=' + new Date().getTime();
+                    }, 2500);
                 } else {
                     messageAlert.innerHTML = `<div style="background: #fee2e2; color: #dc2626; padding: 0.75rem 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; font-size: 0.9rem;">${data.message}</div>`;
                 }

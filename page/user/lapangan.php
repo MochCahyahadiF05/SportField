@@ -10,11 +10,11 @@ try {
     $stmt = $pdo->prepare("
         SELECT l.*, 
                GROUP_CONCAT(f.nama SEPARATOR ',') as fasilitas,
-               jenis_olahraga.nama as jenis_nama
+               j.nama as jenis_nama
         FROM lapangan l
         LEFT JOIN lapangan_fasilitas lf ON l.id = lf.lapangan_id
         LEFT JOIN fasilitas f ON lf.fasilitas_id = f.id
-        LEFT JOIN jenis_olahraga ON l.jenis = jenis_olahraga.nama
+        LEFT JOIN jenis_olahraga j ON l.jenis = j.id
         WHERE l.status = 'tersedia'
         GROUP BY l.id
         ORDER BY l.nama
@@ -109,7 +109,7 @@ try {
             <div id="fieldsGrid" class="fields-grid">
                 <?php foreach ($lapangan_list as $lapangan): ?>
                 <div class="field-card" 
-                     data-category="<?php echo strtolower($lapangan['jenis']); ?>" 
+                     data-category="<?php echo strtolower(htmlspecialchars($lapangan['jenis_nama'])); ?>" 
                      data-price="<?php echo $lapangan['harga_per_jam']; ?>" 
                      data-rating="<?php echo $lapangan['average_rating']; ?>" 
                      data-name="<?php echo htmlspecialchars($lapangan['nama']); ?>">
@@ -127,7 +127,7 @@ try {
                     <div class="card-body">
                         <div class="card-header">
                             <h3><?php echo htmlspecialchars($lapangan['nama']); ?></h3>
-                            <span class="badge-type"><?php echo htmlspecialchars($lapangan['jenis']); ?></span>
+                            <span class="badge-type"><?php echo htmlspecialchars($lapangan['jenis_nama']); ?></span>
                         </div>
                         <p class="card-description">
                             <?php 

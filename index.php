@@ -1,10 +1,10 @@
 <?php
 require_once 'config/db.php';
 
-// Query lapangan dengan rating tertinggi, status tersedia, max 3
-$query = "SELECT l.*, j.nama as jenis_nama 
+// Query lapangan dengan rating tertinggi, status tersedia, max 3 + JOIN dengan jenis_olahraga untuk nama
+$query = "SELECT l.*, j.nama as jenis_nama
           FROM lapangan l 
-          LEFT JOIN jenis_olahraga j ON l.jenis = j.id 
+          LEFT JOIN jenis_olahraga j ON l.jenis = j.id
           WHERE l.status = 'tersedia' 
           ORDER BY l.average_rating DESC, l.total_rating DESC 
           LIMIT 3";
@@ -49,7 +49,7 @@ $lapangan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </a>
-                        <a href="view/user/lapangan.html" class="btn-secondary" style="text-decoration: none;">Lihat Lapangan</a>
+                        <a href="page/user/lapangan.php" class="btn-secondary" style="text-decoration: none;">Lihat Lapangan</a>
                     </div>
                     
                     <!-- Stats -->

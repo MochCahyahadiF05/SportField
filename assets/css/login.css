@@ -232,6 +232,9 @@ body {
     padding: 28px;
     max-width: 480px;
     margin: 0 auto;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
 }
 
 @media (min-width: 768px) {
@@ -331,6 +334,8 @@ body {
     color: var(--gray-900);
     outline: none;
     transition: all 0.3s;
+    pointer-events: auto;
+    cursor: text;
 }
 
 .form-input:focus {
@@ -352,6 +357,7 @@ body {
     cursor: pointer;
     display: flex;
     align-items: center;
+    pointer-events: auto;
 }
 
 .toggle-password .icon {
@@ -416,6 +422,7 @@ body {
     font-size: 15px;
     cursor: pointer;
     transition: all 0.3s;
+    pointer-events: auto;
 }
 
 .btn-submit:hover {

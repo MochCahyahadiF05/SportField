@@ -140,6 +140,34 @@ ob_start();
     </div>
 </div>
 
+<!-- Modal Success -->
+<div id="successModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 50; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; width: 100%; max-width: 500px; padding: 24px; text-align: center;">
+        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #16A34A;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h3 id="successTitle" style="font-size: 20px; font-weight: bold; color: #111827; margin-bottom: 8px;">Berhasil!</h3>
+        <p id="successMessage" style="color: #6b7280; margin-bottom: 24px; font-size: 14px;">Jenis olahraga berhasil ditambahkan</p>
+        <button onclick="closeSuccessModal()" style="background: linear-gradient(to right, #16A34A, #22c55e); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">Lanjutkan</button>
+    </div>
+</div>
+
+<!-- Modal Error -->
+<div id="errorModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 50; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; width: 100%; max-width: 500px; padding: 24px; text-align: center;">
+        <div style="width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #dc2626;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        <h3 id="errorTitle" style="font-size: 20px; font-weight: bold; color: #111827; margin-bottom: 8px;">Terjadi Kesalahan</h3>
+        <p id="errorMessage" style="color: #6b7280; margin-bottom: 24px; font-size: 14px;">Gagal memproses permintaan Anda</p>
+        <button onclick="closeErrorModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">Tutup</button>
+    </div>
+</div>
+
 <?php
 // Get buffered content and include layout
 $page_content = ob_get_clean();
@@ -192,15 +220,16 @@ function handleAdd(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Jenis olahraga berhasil ditambahkan');
-            location.reload();
+            showSuccessModal('Jenis Olahraga Ditambahkan', 'Jenis olahraga berhasil ditambahkan. Halaman akan di-reload dalam 2 detik.');
+            closeAddModal();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Menambahkan', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
 }
 
@@ -217,15 +246,16 @@ function handleEdit(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Jenis olahraga berhasil diperbarui');
-            location.reload();
+            showSuccessModal('Jenis Olahraga Diperbarui', 'Jenis olahraga berhasil diperbarui. Halaman akan di-reload dalam 2 detik.');
+            closeEditModal();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Memperbarui', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
 }
 
@@ -242,16 +272,39 @@ function confirmDelete() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Jenis olahraga berhasil dihapus');
-            location.reload();
+            showSuccessModal('Jenis Olahraga Dihapus', 'Jenis olahraga berhasil dihapus. Halaman akan di-reload dalam 2 detik.');
+            closeDeleteModal();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Menghapus', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
+}
+
+// Success/Error Modal Functions
+function showSuccessModal(title, message) {
+    document.getElementById('successTitle').textContent = title;
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successModal').style.display = 'flex';
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').style.display = 'none';
+    location.reload();
+}
+
+function showErrorModal(title, message) {
+    document.getElementById('errorTitle').textContent = title;
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorModal').style.display = 'flex';
+}
+
+function closeErrorModal() {
+    document.getElementById('errorModal').style.display = 'none';
 }
 
 // Close modals when clicking outside
@@ -259,9 +312,13 @@ document.addEventListener('click', function(e) {
     const addModal = document.getElementById('addModal');
     const editModal = document.getElementById('editModal');
     const deleteModal = document.getElementById('deleteModal');
+    const successModal = document.getElementById('successModal');
+    const errorModal = document.getElementById('errorModal');
     
     if (e.target === addModal) addModal.style.display = 'none';
     if (e.target === editModal) editModal.style.display = 'none';
     if (e.target === deleteModal) deleteModal.style.display = 'none';
+    if (e.target === successModal) successModal.style.display = 'none';
+    if (e.target === errorModal) errorModal.style.display = 'none';
 });
 </script>

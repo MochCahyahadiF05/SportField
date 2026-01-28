@@ -27,14 +27,19 @@ $fasilitas_list = [];
 $jenis_list = [];
 
 try {
-    // Get all lapangan with their facilities
-    $stmt = $pdo->query("SELECT * FROM lapangan ORDER BY id DESC");
+    // Get all lapangan with their facilities and jenis names
+    $stmt = $pdo->query("
+        SELECT l.*, j.nama as jenis_nama 
+        FROM lapangan l 
+        LEFT JOIN jenis_olahraga j ON l.jenis = j.id 
+        ORDER BY l.id DESC
+    ");
     $lapangan_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     error_log("Loaded " . count($lapangan_list) . " lapangan records");
     
     // Debug: Log each ID
     foreach ($lapangan_list as $l) {
-        error_log("  - ID: {$l['id']}, Nama: {$l['nama']}");
+        error_log("  - ID: {$l['id']}, Nama: {$l['nama']}, Jenis: {$l['jenis']} ({$l['jenis_nama']})");
     }
     
     // Get facilities for each lapangan
@@ -137,7 +142,7 @@ ob_start();
             <select id="filterJenis" onchange="applyFilter()">
                 <option value="">Semua Jenis</option>
                 <?php foreach ($jenis_list as $jenis): ?>
-                <option value="<?php echo htmlspecialchars($jenis['nama']); ?>">
+                <option value="<?php echo htmlspecialchars($jenis['id']); ?>">
                     <?php echo htmlspecialchars($jenis['nama']); ?>
                 </option>
                 <?php endforeach; ?>
@@ -212,7 +217,7 @@ ob_start();
             <div class="card-header">
                 <div>
                     <h4><?php echo htmlspecialchars($lapangan['nama']); ?></h4>
-                    <p class="card-type"><?php echo htmlspecialchars($lapangan['jenis']); ?></p>
+                    <p class="card-type"><?php echo htmlspecialchars($lapangan['jenis_nama'] ?? 'Olahraga'); ?></p>
                 </div>
             </div>
             <div class="card-rating">
@@ -262,7 +267,7 @@ ob_start();
                         <select name="jenis" required>
                             <option value="">-- Pilih Jenis Olahraga --</option>
                             <?php foreach ($jenis_list as $jenis): ?>
-                            <option value="<?php echo htmlspecialchars($jenis['nama']); ?>">
+                            <option value="<?php echo htmlspecialchars($jenis['id']); ?>">
                                 <?php echo htmlspecialchars($jenis['nama']); ?>
                             </option>
                             <?php endforeach; ?>
@@ -270,7 +275,7 @@ ob_start();
                     </div>
                     <div class="form-group">
                         <label>Harga per Jam (Rp) *</label>
-                        <input type="number" name="harga_per_jam" min="10000" step="10000" required>
+                        <input type="number" name="harga_per_jam" min="10000" step="1000" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -281,7 +286,7 @@ ob_start();
                     <label>Status</label>
                     <select name="status">
                         <option value="tersedia">Tersedia</option>
-                        <option value="maintenance">Maintenance</option>
+                        <option value="maintenance">Perbaikan</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -338,7 +343,7 @@ ob_start();
                         <select name="jenis" id="editJenis" required>
                             <option value="">-- Pilih Jenis Olahraga --</option>
                             <?php foreach ($jenis_list as $jenis): ?>
-                            <option value="<?php echo htmlspecialchars($jenis['nama']); ?>">
+                            <option value="<?php echo htmlspecialchars($jenis['id']); ?>">
                                 <?php echo htmlspecialchars($jenis['nama']); ?>
                             </option>
                             <?php endforeach; ?>
@@ -346,7 +351,7 @@ ob_start();
                     </div>
                     <div class="form-group">
                         <label>Harga per Jam (Rp) *</label>
-                        <input type="number" name="harga_per_jam" id="editHarga" min="10000" step="10000" required>
+                        <input type="number" name="harga_per_jam" id="editHarga" min="10000" step="1000" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -357,7 +362,7 @@ ob_start();
                     <label>Status</label>
                     <select name="status" id="editStatus">
                         <option value="tersedia">Tersedia</option>
-                        <option value="maintenance">Maintenance</option>
+                        <option value="maintenance">Perbaikan</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -420,6 +425,38 @@ ob_start();
     </div>
 </div>
 
+<!-- Modal Success Create/Edit/Delete -->
+<div id="successModal" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-body" style="text-align: center;">
+            <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #16A34A;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 id="successTitle" style="font-size: 20px; font-weight: bold; color: #111827; margin-bottom: 8px;">Berhasil!</h3>
+            <p id="successMessage" style="color: #6b7280; margin-bottom: 24px; font-size: 14px;">Lapangan berhasil ditambahkan</p>
+            <button onclick="closeSuccessModal()" class="btn-primary" style="width: 100%;">Lanjutkan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Error -->
+<div id="errorModal" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-body" style="text-align: center;">
+            <div style="width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #dc2626;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h3 id="errorTitle" style="font-size: 20px; font-weight: bold; color: #111827; margin-bottom: 8px;">Terjadi Kesalahan</h3>
+            <p id="errorMessage" style="color: #6b7280; margin-bottom: 24px; font-size: 14px;">Gagal memproses permintaan Anda</p>
+            <button onclick="closeErrorModal()" class="btn-secondary" style="width: 100%;">Tutup</button>
+        </div>
+    </div>
+</div>
+
 <?php
 // Get buffered content and include layout
 $page_content = ob_get_clean();
@@ -433,6 +470,7 @@ include '../includes/admin-layout.php';
 
 <script>
 const lapanganData = <?php echo json_encode($lapangan_list); ?>;
+const jenisData = <?php echo json_encode($jenis_list); ?>;
 let deleteId = null;
 
 // Filter Functions
@@ -449,8 +487,8 @@ function applyFilter() {
         const lapangan = lapanganData[index];
         let isVisible = true;
 
-        // Filter by Jenis Olahraga
-        if (filterJenis && lapangan.jenis !== filterJenis) {
+        // Filter by Jenis Olahraga (compare as integers since jenis is now ID)
+        if (filterJenis && parseInt(lapangan.jenis) !== parseInt(filterJenis)) {
             isVisible = false;
         }
 
@@ -600,7 +638,14 @@ function openDetailModal(id) {
     console.log("Opening detail modal for:", lapangan.nama);
     document.getElementById('editId').value = lapangan.id;
     document.getElementById('editNama').value = lapangan.nama;
-    document.getElementById('editJenis').value = lapangan.jenis;
+    
+    // Set jenis berdasarkan ID (bukan nama)
+    const jenisSelect = document.getElementById('editJenis');
+    setTimeout(() => {
+        jenisSelect.value = lapangan.jenis;  // lapangan.jenis adalah ID sekarang
+        console.log("Selected jenis ID:", lapangan.jenis);
+    }, 0);
+    
     document.getElementById('editHarga').value = lapangan.harga_per_jam;
     document.getElementById('editDeskripsi').value = lapangan.deskripsi || '';
     document.getElementById('editStatus').value = lapangan.status;
@@ -669,16 +714,16 @@ function handleAddLapangan(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Lapangan berhasil ditambahkan');
+            showSuccessModal('Lapangan Ditambahkan', 'Lapangan berhasil ditambahkan. Halaman akan di-reload dalam 2 detik.');
             closeAddModal();
-            location.reload();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Menambahkan', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
 }
 
@@ -697,16 +742,16 @@ function handleEditLapangan(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Lapangan berhasil diperbarui');
+            showSuccessModal('Lapangan Diperbarui', 'Perubahan lapangan berhasil disimpan. Halaman akan di-reload dalam 2 detik.');
             closeDetailModal();
-            location.reload();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Memperbarui', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
 }
 
@@ -723,22 +768,44 @@ function confirmDelete() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Lapangan berhasil dihapus');
+            showSuccessModal('Lapangan Dihapus', 'Lapangan berhasil dihapus. Halaman akan di-reload dalam 2 detik.');
             closeDeleteModal();
-            location.reload();
+            setTimeout(() => location.reload(), 2000);
         } else {
-            alert('Error: ' + data.message);
+            showErrorModal('Gagal Menghapus', 'Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        showErrorModal('Terjadi Kesalahan', 'Gagal menghubungi server. Silahkan coba lagi.');
     });
+}
+
+// Success/Error Modal Functions
+function showSuccessModal(title, message) {
+    document.getElementById('successTitle').textContent = title;
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successModal').classList.add('show');
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').classList.remove('show');
+    location.reload();
+}
+
+function showErrorModal(title, message) {
+    document.getElementById('errorTitle').textContent = title;
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorModal').classList.add('show');
+}
+
+function closeErrorModal() {
+    document.getElementById('errorModal').classList.remove('show');
 }
 
 // Close modals when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
-    ['addModal', 'detailModal', 'deleteModal'].forEach(modalId => {
+    ['addModal', 'detailModal', 'deleteModal', 'successModal', 'errorModal'].forEach(modalId => {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.addEventListener('click', function(e) {

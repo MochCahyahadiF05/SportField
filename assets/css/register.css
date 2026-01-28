@@ -234,6 +234,9 @@ body {
     margin: 0 auto;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
 }
 
 /* Custom Scrollbar */
@@ -374,6 +377,8 @@ body {
     color: var(--gray-900);
     outline: none;
     transition: all 0.3s;
+    pointer-events: auto;
+    cursor: text;
 }
 
 .form-input.with-icon {
@@ -399,6 +404,7 @@ body {
     cursor: pointer;
     display: flex;
     align-items: center;
+    pointer-events: auto;
 }
 
 .toggle-password .icon {
@@ -460,6 +466,7 @@ body {
     cursor: pointer;
     transition: all 0.3s;
     margin-top: 4px;
+    pointer-events: auto;
 }
 
 .btn-submit:hover {

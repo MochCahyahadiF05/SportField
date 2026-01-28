@@ -67,12 +67,37 @@ try {
             throw new Exception('ID tidak valid');
         }
         
-        $stmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
-        $stmt->execute([$id]);
-        
-        if ($stmt->rowCount() === 0) {
+        // Check if record exists
+        $check = $pdo->prepare("SELECT id FROM $table WHERE id = ?");
+        $check->execute([$id]);
+        if ($check->rowCount() === 0) {
             throw new Exception(ucfirst($table) . ' tidak ditemukan');
         }
+        
+        // Validate deletion for jenis_olahraga - check if any lapangan uses it
+        if ($table === 'jenis_olahraga') {
+            $usageCheck = $pdo->prepare("SELECT COUNT(*) as count FROM lapangan WHERE jenis = ?");
+            $usageCheck->execute([$id]);
+            $result = $usageCheck->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result['count'] > 0) {
+                throw new Exception('Tidak dapat menghapus jenis olahraga karena masih digunakan oleh ' . $result['count'] . ' lapangan. Silakan ubah jenis lapangan tersebut terlebih dahulu.');
+            }
+        }
+        
+        // Validate deletion for fasilitas - check if any lapangan_fasilitas uses it
+        if ($table === 'fasilitas') {
+            $usageCheck = $pdo->prepare("SELECT COUNT(*) as count FROM lapangan_fasilitas WHERE fasilitas_id = ?");
+            $usageCheck->execute([$id]);
+            $result = $usageCheck->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result['count'] > 0) {
+                throw new Exception('Tidak dapat menghapus fasilitas karena masih digunakan oleh ' . $result['count'] . ' lapangan. Silakan hapus asosiasi fasilitas tersebut terlebih dahulu.');
+            }
+        }
+        
+        $stmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
+        $stmt->execute([$id]);
         
         echo json_encode(['success' => true, 'message' => ucfirst($table) . ' berhasil dihapus']);
         

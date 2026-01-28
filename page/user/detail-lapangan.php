@@ -8,9 +8,14 @@ require_once '../../config/db.php';
 // Get lapangan_id dari URL
 $lapangan_id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
 
-// Query lapangan data
+// Query lapangan data dengan JOIN jenis_olahraga
 try {
-    $stmt = $pdo->prepare("SELECT * FROM lapangan WHERE id = ?");
+    $stmt = $pdo->prepare("
+        SELECT l.*, j.nama as jenis_nama
+        FROM lapangan l 
+        LEFT JOIN jenis_olahraga j ON l.jenis = j.id
+        WHERE l.id = ?
+    ");
     $stmt->execute([$lapangan_id]);
     $lapangan = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -84,7 +89,7 @@ try {
                             }
                             ?>
                             <img src="<?php echo $gambar_src; ?>" alt="<?php echo htmlspecialchars($lapangan['nama']); ?>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px;">
-                            <div class="badge-indoor"><?php echo htmlspecialchars($lapangan['jenis']); ?></div>
+                            <div class="badge-indoor"><?php echo htmlspecialchars($lapangan['jenis_nama'] ?? 'Olahraga'); ?></div>
                             <div class="image-overlay"></div>
                         </div>
                     </div>

@@ -7,12 +7,17 @@
     <title>Dashboard - SportField</title>
     <link rel="stylesheet" href="../../assets/css/profile.css">
     <link rel="stylesheet" href="../../assets/css/navbar-footer.css">
+    <script src="https://kit.fontawesome.com/80f227685e.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <?php 
     require_once '../../config/config.php';
     require_once '../../config/Auth.php';
+    require_once '../../config/db.php';
+
+    // Set timezone
+    date_default_timezone_set('Asia/Jakarta');
 
     // Check if user is logged in
     if (!Auth::isLoggedIn()) {
@@ -21,10 +26,42 @@
     }
 
     $currentUser = Auth::getUser();
+    $userId = $currentUser['id'];
     $userName = htmlspecialchars($currentUser['name']);
     $userEmail = htmlspecialchars($currentUser['email']);
     $userPhone = !empty($currentUser['phone']) ? htmlspecialchars($currentUser['phone']) : 'Belum diisi';
     $userJoinDate = date('d F Y', strtotime($currentUser['created_at']));
+
+    // Get booking statistics from database
+    global $pdo;
+    
+    // Total booking
+    $total_booking = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE user_id = $userId")->fetch()['total'];
+    
+    // Booking aktif (pending atau confirmed)
+    $booking_aktif = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE user_id = $userId AND status IN ('pending', 'confirmed')")->fetch()['total'];
+    
+    // Booking selesai
+    $booking_selesai = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE user_id = $userId AND status = 'completed'")->fetch()['total'];
+    
+
+    // Get user bookings from database
+    $bookings = $pdo->query("
+        SELECT 
+            b.id,
+            b.tanggal,
+            b.jam_mulai,
+            b.jam_selesai,
+            b.total_harga,
+            b.status,
+            l.nama as lapangan_name,
+            l.id as lapangan_id,
+            l.gambar as lapangan_foto
+        FROM booking b
+        JOIN lapangan l ON b.lapangan_id = l.id
+        WHERE b.user_id = $userId
+        ORDER BY b.tanggal DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
     ?>
 
     <!-- Navbar -->
@@ -114,7 +151,7 @@
                                         </div>
                                         <div class="info-item">
                                             <label>Total Booking</label>
-                                            <p class="highlight">0 Kali</p>
+                                            <p class="highlight"><?php echo $total_booking; ?> Kali</p>
                                         </div>
                                     </div>
                                 </div>
@@ -127,31 +164,24 @@
                             </div>
                             <div class="stats-grid">
                                 <div class="stat-card">
-                                    <div class="stat-icon">📅</div>
+                                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
                                     <div class="stat-info">
-                                        <h3>12</h3>
+                                        <h3><?php echo $total_booking; ?></h3>
                                         <p>Total Booking</p>
                                     </div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-icon">⏳</div>
+                                    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
                                     <div class="stat-info">
-                                        <h3>2</h3>
+                                        <h3><?php echo $booking_aktif; ?></h3>
                                         <p>Booking Aktif</p>
                                     </div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-icon">✅</div>
+                                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                                     <div class="stat-info">
-                                        <h3>10</h3>
+                                        <h3><?php echo $booking_selesai; ?></h3>
                                         <p>Selesai</p>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">🎁</div>
-                                    <div class="stat-info">
-                                        <h3>450</h3>
-                                        <p>Poin Reward</p>
                                     </div>
                                 </div>
                             </div>
@@ -171,149 +201,56 @@
                                 </div>
                             </div>
                             <div class="history-list">
-                                <div class="history-item" data-status="active">
-                                    <div class="history-image">
-                                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=200" alt="Lapangan">
-                                    </div>
-                                    <div class="history-info">
-                                        <div class="history-header">
-                                            <h3>Lapangan Futsal A</h3>
-                                            <span class="badge badge-active">Aktif</span>
+                                <?php if (count($bookings) > 0): ?>
+                                    <?php foreach ($bookings as $booking): 
+                                        $status_class = $booking['status'] === 'completed' ? 'completed' : ($booking['status'] === 'cancelled' ? 'cancelled' : 'active');
+                                        $status_text = $booking['status'] === 'completed' ? 'Selesai' : ($booking['status'] === 'cancelled' ? 'Dibatalkan' : 'Aktif');
+                                        // Fix image path - remove leading slash if exists
+                                        $foto = !empty($booking['lapangan_foto']) ? BASE_URL . $booking['lapangan_foto'] : 'https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=200';
+                                        $tanggal = date('l, d F Y', strtotime($booking['tanggal']));
+                                    ?>
+                                    <div class="history-item" data-status="<?php echo $booking['status']; ?>">
+                                        <div class="history-image">
+                                            <img src="<?php echo $foto; ?>" alt="<?php echo $booking['lapangan_name']; ?>">
                                         </div>
-                                        <div class="history-details">
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>Sabtu, 5 Januari 2025</span>
+                                        <div class="history-info">
+                                            <div class="history-header">
+                                                <h3><?php echo htmlspecialchars($booking['lapangan_name']); ?></h3>
+                                                <span class="badge badge-<?php echo $status_class; ?>"><?php echo $status_text; ?></span>
                                             </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <span>14:00 - 16:00 (2 Jam)</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                </svg>
-                                                <span>Rp 300.000</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="history-actions">
-                                        <button class="btn-action btn-detail">Detail</button>
-                                        <button class="btn-action btn-cancel">Batalkan</button>
-                                    </div>
-                                </div>
-
-                                <div class="history-item" data-status="active">
-                                    <div class="history-image">
-                                        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=200" alt="Lapangan">
-                                    </div>
-                                    <div class="history-info">
-                                        <div class="history-header">
-                                            <h3>Lapangan Basket Premium</h3>
-                                            <span class="badge badge-active">Aktif</span>
-                                        </div>
-                                        <div class="history-details">
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>Minggu, 6 Januari 2025</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <span>09:00 - 11:00 (2 Jam)</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                </svg>
-                                                <span>Rp 400.000</span>
+                                            <div class="history-details">
+                                                <div class="detail-item">
+                                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <span><?php echo $tanggal; ?></span>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <span><?php echo date('H:i', strtotime($booking['jam_mulai'])); ?> - <?php echo date('H:i', strtotime($booking['jam_selesai'])); ?> (<?php echo ceil((strtotime($booking['jam_selesai']) - strtotime($booking['jam_mulai'])) / 3600); ?> Jam)</span>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                    </svg>
+                                                    <span>Rp <?php echo number_format($booking['total_harga'], 0, ',', '.'); ?></span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="history-actions">
-                                        <button class="btn-action btn-detail">Detail</button>
-                                        <button class="btn-action btn-cancel">Batalkan</button>
-                                    </div>
-                                </div>
-
-                                <div class="history-item" data-status="completed">
-                                    <div class="history-image">
-                                        <img src="https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=200" alt="Lapangan">
-                                    </div>
-                                    <div class="history-info">
-                                        <div class="history-header">
-                                            <h3>Lapangan Futsal B</h3>
-                                            <span class="badge badge-completed">Selesai</span>
-                                        </div>
-                                        <div class="history-details">
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>Jumat, 27 Desember 2024</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <span>18:00 - 20:00 (2 Jam)</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                </svg>
-                                                <span>Rp 300.000</span>
-                                            </div>
+                                        <div class="history-actions">
+                                            <?php if ($booking['status'] === 'completed' || $booking['status'] === 'cancelled'): ?>
+                                            <button class="btn-action btn-primary" onclick="bookingLagi(<?php echo $booking['lapangan_id']; ?>)">Booking Lagi</button>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
-                                    <div class="history-actions">
-                                        <button class="btn-action btn-detail">Detail</button>
-                                        <button class="btn-action btn-primary">Booking Lagi</button>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div style="padding: 40px; text-align: center; color: #999;">
+                                        <p>Belum ada riwayat penyewaan</p>
                                     </div>
-                                </div>
-
-                                <div class="history-item" data-status="cancelled">
-                                    <div class="history-image">
-                                        <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=200" alt="Lapangan">
-                                    </div>
-                                    <div class="history-info">
-                                        <div class="history-header">
-                                            <h3>Lapangan Voli Indoor</h3>
-                                            <span class="badge badge-cancelled">Dibatalkan</span>
-                                        </div>
-                                        <div class="history-details">
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>Rabu, 25 Desember 2024</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <span>16:00 - 18:00 (2 Jam)</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                </svg>
-                                                <span>Rp 350.000</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="history-actions">
-                                        <button class="btn-action btn-detail">Detail</button>
-                                        <button class="btn-action btn-primary">Booking Lagi</button>
-                                    </div>
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -359,24 +296,6 @@
                                     </div>
                                 </div>
 
-                                <div class="form-section">
-                                    <h3>Notifikasi</h3>
-                                    <div class="toggle-group">
-                                        <label class="toggle-item">
-                                            <input type="checkbox" checked>
-                                            <span class="toggle-label">Email Notifikasi Booking</span>
-                                        </label>
-                                        <label class="toggle-item">
-                                            <input type="checkbox" checked>
-                                            <span class="toggle-label">Notifikasi Promo & Diskon</span>
-                                        </label>
-                                        <label class="toggle-item">
-                                            <input type="checkbox">
-                                            <span class="toggle-label">Newsletter Bulanan</span>
-                                        </label>
-                                    </div>
-                                </div>
-
                                 <div class="form-actions">
                                     <button type="button" class="btn-secondary">Batal</button>
                                     <button type="submit" class="btn-primary">Simpan Perubahan</button>
@@ -404,6 +323,11 @@
     <!-- Footer -->
     <?php include '../includes/footer.php'; ?>
     <script src="../../assets/js/profile.js"></script>
+    <script>
+        function bookingLagi(lapanganId) {
+            window.location.href = '../../page/user/detail-lapangan.php?id=' + lapanganId;
+        }
+    </script>
 </body>
 
 </html>

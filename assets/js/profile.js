@@ -1,3 +1,49 @@
+// Toast Notification Function
+function showToast(message, type = 'success', duration = 3000) {
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                 type === 'error' ? 'fa-exclamation-circle' : 
+                 type === 'warning' ? 'fa-warning' : 'fa-info-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        </div>
+        <div class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    `;
+    document.body.appendChild(container);
+    return container;
+}
+
 // Tab Switching
 document.addEventListener('DOMContentLoaded', function() {
     const menuItems = document.querySelectorAll('.menu-item');
@@ -58,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Edit Profile
 function editProfile() {
-    alert('Fitur Edit Profil akan segera hadir!');
+    showToast('Fitur Edit Profil akan segera hadir!', 'info');
     // Here you would typically open a modal or redirect to edit page
 }
 
@@ -68,7 +114,7 @@ function logout() {
     
     if (confirmLogout) {
         // Here you would typically clear session/token
-        alert('Logout berhasil!');
+        showToast('Logout berhasil!', 'success');
         // Redirect to login page
         // window.location.href = 'login.html';
     }
@@ -89,7 +135,7 @@ function deleteAccount() {
         
         if (doubleConfirm) {
             // Here you would typically send delete request to server
-            alert('Akun berhasil dihapus. Anda akan diarahkan ke halaman utama.');
+            showToast('Akun berhasil dihapus. Anda akan diarahkan ke halaman utama.', 'success');
             // window.location.href = 'index.html';
         }
     }
@@ -103,71 +149,80 @@ document.addEventListener('DOMContentLoaded', function() {
         settingsForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Get form data
-            const formData = new FormData(this);
+            // Get form inputs
+            const nameInput = settingsForm.querySelector('input[type="text"]');
+            const emailInput = settingsForm.querySelector('input[type="email"]');
+            const phoneInput = settingsForm.querySelector('input[type="tel"]');
+            const oldPasswordInput = settingsForm.querySelector('input[placeholder="Masukkan password lama"]');
+            const newPasswordInput = settingsForm.querySelector('input[placeholder="Masukkan password baru"]');
+            const confirmPasswordInput = settingsForm.querySelector('input[placeholder="Konfirmasi password baru"]');
             
-            // Here you would typically send the data to your server
-            console.log('Settings updated');
-            
-            // Show success message
-            alert('Pengaturan berhasil disimpan!');
+            // Check if updating profile or password
+            if (oldPasswordInput.value || newPasswordInput.value || confirmPasswordInput.value) {
+                // Change password
+                updatePassword(oldPasswordInput.value, newPasswordInput.value, confirmPasswordInput.value);
+            } else {
+                // Update profile
+                updateProfile(nameInput.value, emailInput.value, phoneInput.value);
+            }
         });
     }
 });
 
-// History Item Actions
-document.addEventListener('DOMContentLoaded', function() {
-    // Detail buttons
-    const detailBtns = document.querySelectorAll('.btn-detail');
-    detailBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const historyItem = this.closest('.history-item');
-            const fieldName = historyItem.querySelector('h3').textContent;
-            
-            alert(`Menampilkan detail booking untuk: ${fieldName}`);
-            // Here you would typically open a modal with booking details
-        });
-    });
+function updateProfile(name, email, phone) {
+    const formData = new FormData();
+    formData.append('action', 'update_profile');
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phone', phone);
     
-    // Cancel buttons
-    const cancelBtns = document.querySelectorAll('.btn-cancel');
-    cancelBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const confirmCancel = confirm('Apakah Anda yakin ingin membatalkan booking ini?');
-            
-            if (confirmCancel) {
-                const historyItem = this.closest('.history-item');
-                const fieldName = historyItem.querySelector('h3').textContent;
-                
-                // Update status to cancelled
-                const badge = historyItem.querySelector('.badge');
-                badge.className = 'badge badge-cancelled';
-                badge.textContent = 'Dibatalkan';
-                
-                // Update data-status
-                historyItem.setAttribute('data-status', 'cancelled');
-                
-                // Replace cancel button with booking button
-                this.outerHTML = '<button class="btn-action btn-primary">Booking Lagi</button>';
-                
-                alert(`Booking untuk ${fieldName} berhasil dibatalkan`);
-            }
-        });
-    });
-    
-    // Booking again functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-primary') && 
-            e.target.textContent === 'Booking Lagi') {
-            const historyItem = e.target.closest('.history-item');
-            const fieldName = historyItem.querySelector('h3').textContent;
-            
-            alert(`Membuka halaman booking untuk: ${fieldName}`);
-            // Here you would typically redirect to booking page
-            // window.location.href = 'detail-lapangan.html';
+    fetch('../../page/user/profile-handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'error');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Terjadi kesalahan saat memperbarui profil', 'error');
     });
-});
+}
+
+function updatePassword(oldPassword, newPassword, confirmPassword) {
+    const formData = new FormData();
+    formData.append('action', 'change_password');
+    formData.append('old_password', oldPassword);
+    formData.append('new_password', newPassword);
+    formData.append('confirm_password', confirmPassword);
+    
+    fetch('../../page/user/profile-handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Clear password fields
+            document.querySelector('input[placeholder="Masukkan password lama"]').value = '';
+            document.querySelector('input[placeholder="Masukkan password baru"]').value = '';
+            document.querySelector('input[placeholder="Konfirmasi password baru"]').value = '';
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Terjadi kesalahan saat mengubah password', 'error');
+    });
+}
 
 // Change Photo
 document.addEventListener('DOMContentLoaded', function() {
@@ -186,13 +241,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (file) {
                     // Check file size (max 2MB)
                     if (file.size > 2 * 1024 * 1024) {
-                        alert('Ukuran file maksimal 2MB');
+                        showToast('Ukuran file maksimal 2MB', 'warning');
                         return;
                     }
                     
                     // Check file type
                     if (!file.type.startsWith('image/')) {
-                        alert('File harus berupa gambar');
+                        showToast('File harus berupa gambar', 'warning');
                         return;
                     }
                     
@@ -209,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             userAvatar.src = event.target.result;
                         }
                         
-                        alert('Foto profil berhasil diubah!');
+                        showToast('Foto profil berhasil diubah!', 'success');
                     };
                     
                     reader.readAsDataURL(file);

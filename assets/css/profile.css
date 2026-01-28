@@ -440,25 +440,6 @@ body {
     white-space: nowrap;
 }
 
-.btn-detail {
-    background: white;
-    border: 1px solid var(--gray-300);
-    color: var(--gray-700);
-}
-
-.btn-detail:hover {
-    background: var(--gray-50);
-}
-
-.btn-cancel {
-    background: var(--danger);
-    color: white;
-}
-
-.btn-cancel:hover {
-    background: #dc2626;
-}
-
 .btn-primary {
     padding: 12px 24px;
     background: var(--primary);
@@ -651,4 +632,114 @@ body {
     .menu-item span {
         display: none;
     }
+}
+
+/* Toast Notification Styles */
+.toast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 8px;
+    min-width: 300px;
+    max-width: 450px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: slideInRight 0.3s ease-out;
+    background: white;
+    border-left: 4px solid;
+    gap: 12px;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-fade-out {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.toast-success {
+    border-left-color: #16A34A;
+}
+
+.toast-success .toast-content i {
+    color: #16A34A;
+}
+
+.toast-error {
+    border-left-color: #ef4444;
+}
+
+.toast-error .toast-content i {
+    color: #ef4444;
+}
+
+.toast-warning {
+    border-left-color: #f59e0b;
+}
+
+.toast-warning .toast-content i {
+    color: #f59e0b;
+}
+
+.toast-info {
+    border-left-color: #3b82f6;
+}
+
+.toast-info .toast-content i {
+    color: #3b82f6;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.toast-content i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.toast-close {
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    border: none;
+    background: none;
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+}
+
+.toast-close:hover {
+    opacity: 1;
+    color: var(--gray-600);
+}
+
+.toast-close i {
+    font-size: 16px;
 }

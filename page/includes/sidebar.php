@@ -68,12 +68,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php';
                     <span>Laporan</span>
                 </a>
             </li>
-            <li>
-                <a href="pengaturan.php" class="sidebar-item <?php echo ($current_page === 'pengaturan.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-cog"></i>
-                    <span>Pengaturan</span>
-                </a>
-            </li>
+            
         </ul>
 
         <!-- Logout -->

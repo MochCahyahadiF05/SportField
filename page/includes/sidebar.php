@@ -2,6 +2,17 @@
 // Get current page filename untuk highlight active menu
 $current_page = basename($_SERVER['PHP_SELF']);
 require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/db.php';
+
+// Get pending bookings count
+global $pdo;
+$pending_bookings = 0;
+try {
+    $result = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE status = 'pending'");
+    $pending_bookings = $result->fetch()['total'];
+} catch (Exception $e) {
+    $pending_bookings = 0;
+}
 ?>
 
 <aside id="sidebar" class="sidebar">
@@ -29,7 +40,9 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php';
                 <a href="booking.php" class="sidebar-item <?php echo ($current_page === 'booking.php') ? 'active' : ''; ?>">
                     <i class="fas fa-calendar"></i>
                     <span>Booking</span>
-                    <span class="badge">5</span>
+                    <?php if ($pending_bookings > 0): ?>
+                    <span class="badge"><?php echo $pending_bookings; ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
             <li>

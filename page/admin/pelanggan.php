@@ -20,6 +20,36 @@ $currentUser = Auth::getUser();
 $page_title = "Pelanggan";
 $page_subtitle = "Kelola data pelanggan";
 
+// Database connection
+global $pdo;
+require_once '../../config/db.php';
+
+// Get customer statistics
+$stat_total = $pdo->query("SELECT COUNT(*) as total FROM users WHERE role='user'")->fetch()['total'];
+
+// Get booking count per customer for "Aktif" status
+$stat_aktif = $pdo->query("SELECT COUNT(DISTINCT user_id) as total FROM booking WHERE status IN ('confirmed', 'completed')")->fetch()['total'];
+
+// Get average rating
+$stat_rating = $pdo->query("SELECT COALESCE(ROUND(AVG(rating), 1), 0) as avg_rating FROM ratings")->fetch()['avg_rating'];
+
+// Get total reviews
+$stat_reviews = $pdo->query("SELECT COUNT(*) as total FROM ratings")->fetch()['total'];
+
+// Get all customers
+$query = "SELECT u.*, 
+                 COUNT(DISTINCT b.id) as total_bookings,
+                 COALESCE(ROUND(AVG(r.rating), 1), 0) as avg_rating
+          FROM users u
+          LEFT JOIN booking b ON u.id = b.user_id
+          LEFT JOIN ratings r ON b.id = r.booking_id
+          WHERE u.role = 'user'
+          GROUP BY u.id
+          ORDER BY u.created_at DESC";
+
+$stmt = $pdo->query($query);
+$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Start output buffering for page content
 ob_start();
 ?>
@@ -30,8 +60,8 @@ ob_start();
         <div class="stat-header">
             <div>
                 <p class="stat-label">Total Pelanggan</p>
-                <p class="stat-value">856</p>
-                <p class="stat-change positive">+42 bulan ini</p>
+                <p class="stat-value"><?php echo number_format($stat_total); ?></p>
+                <p class="stat-period">Terdaftar</p>
             </div>
             <div class="stat-icon blue">
                 <i class="fas fa-users"></i>
@@ -43,8 +73,8 @@ ob_start();
         <div class="stat-header">
             <div>
                 <p class="stat-label">Pelanggan Aktif</p>
-                <p class="stat-value">234</p>
-                <p class="stat-change positive">+8% dari minggu lalu</p>
+                <p class="stat-value"><?php echo number_format($stat_aktif); ?></p>
+                <p class="stat-change positive">Sudah melakukan booking</p>
             </div>
             <div class="stat-icon green">
                 <i class="fas fa-user-check"></i>
@@ -55,12 +85,12 @@ ob_start();
     <div class="stat-card">
         <div class="stat-header">
             <div>
-                <p class="stat-label">Member Premium</p>
-                <p class="stat-value">120</p>
-                <p class="stat-change neutral">+5 bulan ini</p>
+                <p class="stat-label">Total Review</p>
+                <p class="stat-value"><?php echo number_format($stat_reviews); ?></p>
+                <p class="stat-change neutral">Dari booking selesai</p>
             </div>
             <div class="stat-icon orange">
-                <i class="fas fa-crown"></i>
+                <i class="fas fa-comment"></i>
             </div>
         </div>
     </div>
@@ -69,8 +99,8 @@ ob_start();
         <div class="stat-header">
             <div>
                 <p class="stat-label">Rating Rata-rata</p>
-                <p class="stat-value">4.8</p>
-                <p class="stat-change positive">Dari 856 review</p>
+                <p class="stat-value"><?php echo $stat_rating; ?></p>
+                <p class="stat-change positive">Dari semua review</p>
             </div>
             <div class="stat-icon purple">
                 <i class="fas fa-star"></i>
@@ -79,70 +109,82 @@ ob_start();
     </div>
 </div>
 
-<!-- Content Grid -->
-<div class="content-grid">
-    <div class="table-card">
-        <div class="card-header">
-            <h3>Daftar Pelanggan</h3>
-            <a href="#" class="view-all">Lihat Semua</a>
+<!-- Table Card -->
+<div class="table-card">
+    <div class="card-header">
+        <h3>Daftar Pelanggan</h3>
+        <div class="header-actions">
+            <input type="text" id="searchInput" placeholder="Cari pelanggan..." class="search-input">
         </div>
-        <div class="table-wrapper">
-            <table class="data-table">
-                <thead>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Telepon</th>
+                    <th>Total Booking</th>
+                    <th>Bergabung</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="customerTableBody">
+                <?php if (empty($customers)): ?>
                     <tr>
-                        <th>Nama</th>
-                        <th>Email</th>
-                        <th>Telepon</th>
-                        <th>Bergabung</th>
-                        <th>Status</th>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <p class="text-muted">Belum ada data pelanggan</p>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <tr>
+                <?php else: ?>
+                    <?php foreach ($customers as $customer):
+                        // Get initials
+                        $name_parts = explode(' ', $customer['name']);
+                        $initials = '';
+                        foreach ($name_parts as $part) {
+                            if (!empty($part)) {
+                                $initials .= strtoupper(substr($part, 0, 1));
+                            }
+                        }
+                        if (strlen($initials) > 2) $initials = substr($initials, 0, 2);
+                        
+                        // Avatar color
+                        $colors = ['blue', 'purple', 'green', 'orange'];
+                        $color = $colors[$customer['id'] % 4];
+                        
+                        // Format date
+                        $created_date = new DateTime($customer['created_at']);
+                        $formatted_date = $created_date->format('d M Y');
+                        
+                        // Status based on booking
+                        $is_active = $customer['total_bookings'] > 0 ? 'Aktif' : 'Inaktif';
+                        $status_class = $customer['total_bookings'] > 0 ? 'success' : 'warning';
+                    ?>
+                    <tr data-id="<?php echo $customer['id']; ?>">
                         <td>
                             <div class="customer-info">
-                                <div class="customer-avatar blue">AW</div>
+                                <div class="customer-avatar <?php echo $color; ?>"><?php echo $initials; ?></div>
                                 <div>
-                                    <p class="customer-name">Ahmad Wijaya</p>
+                                    <p class="customer-name"><?php echo htmlspecialchars($customer['name']); ?></p>
                                 </div>
                             </div>
                         </td>
-                        <td>ahmad@email.com</td>
-                        <td>+62-812-345-6789</td>
-                        <td>15 Des 2025</td>
-                        <td><span class="status-badge success">Aktif</span></td>
-                    </tr>
-                    <tr>
+                        <td><?php echo htmlspecialchars($customer['email']); ?></td>
+                        <td><?php echo htmlspecialchars($customer['phone'] ?? '-'); ?></td>
                         <td>
-                            <div class="customer-info">
-                                <div class="customer-avatar purple">SR</div>
-                                <div>
-                                    <p class="customer-name">Siti Rahmawati</p>
-                                </div>
-                            </div>
+                            <span class="booking-badge"><?php echo $customer['total_bookings']; ?> booking</span>
                         </td>
-                        <td>siti@email.com</td>
-                        <td>+62-812-345-6790</td>
-                        <td>20 Des 2025</td>
-                        <td><span class="status-badge success">Aktif</span></td>
-                    </tr>
-                    <tr>
+                        <td><?php echo $formatted_date; ?></td>
                         <td>
-                            <div class="customer-info">
-                                <div class="customer-avatar green">RS</div>
-                                <div>
-                                    <p class="customer-name">Roni Sutrisno</p>
-                                </div>
-                            </div>
+                            <span class="status-badge <?php echo $status_class; ?>">
+                                <?php echo $is_active; ?>
+                            </span>
                         </td>
-                        <td>roni@email.com</td>
-                        <td>+62-812-345-6791</td>
-                        <td>10 Jan 2026</td>
-                        <td><span class="status-badge success">Aktif</span></td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -154,4 +196,5 @@ $page_content = ob_get_clean();
 include '../includes/admin-layout.php';
 ?>
 
-<script src="../../assets/js/admin_js/dashboard.js"></script>
+<link rel="stylesheet" href="../../assets/css/admin_style/pelanggan.css">
+<script src="../../assets/js/admin_js/pelanggan.js"></script>

@@ -117,8 +117,261 @@ function updateStatus(bookingId, newStatus) {
 
 // View booking detail
 function viewDetail(bookingId) {
-    // Redirect to detail page or open modal
-    alert('Detail booking #' + bookingId + ' (fitur akan ditambahkan)');
+    fetch(`../../page/admin/booking-handler.php?action=detail&booking_id=${bookingId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showDetailModal(data.data);
+            } else {
+                showAlertModal('Error!', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showAlertModal('Error!', 'Gagal mengambil data booking', 'error');
+            console.error(error);
+        });
+}
+
+// ==== Detail Modal ====
+function showDetailModal(booking) {
+    const modal = document.createElement('div');
+    modal.className = 'booking-modal show';
+    
+    // Format date
+    const bookingDate = new Date(booking.tanggal);
+    const formattedDate = bookingDate.toLocaleDateString('id-ID', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    // Format time
+    const jamMulai = booking.jam_mulai.substring(0, 5);
+    const jamSelesai = booking.jam_selesai.substring(0, 5);
+    
+    // Status colors
+    const getStatusColor = (status) => {
+        const colors = {
+            'pending': '#fbbf24',
+            'confirmed': '#10b981',
+            'cancelled': '#ef4444',
+            'completed': '#3b82f6'
+        };
+        return colors[status] || '#6b7280';
+    };
+    
+    const getStatusText = (status) => {
+        const texts = {
+            'pending': 'Pending',
+            'confirmed': 'Terkonfirmasi',
+            'cancelled': 'Dibatalkan',
+            'completed': 'Selesai'
+        };
+        return texts[status] || status;
+    };
+    
+    const getPaymentStatusColor = (status) => {
+        const colors = {
+            'success': '#10b981',
+            'pending': '#fbbf24',
+            'failed': '#ef4444',
+            'cancelled': '#ef4444',
+            'refunded': '#3b82f6'
+        };
+        return colors[status] || '#6b7280';
+    };
+    
+    const getPaymentStatusText = (status) => {
+        const texts = {
+            'success': 'Lunas',
+            'pending': 'Pending',
+            'failed': 'Ditolak',
+            'cancelled': 'Dibatalkan',
+            'refunded': 'Refund'
+        };
+        return texts[status] || status;
+    };
+    
+    // Durasi
+    const jamMulaiObj = new Date(`2000-01-01 ${booking.jam_mulai}`);
+    const jamSelesaiObj = new Date(`2000-01-01 ${booking.jam_selesai}`);
+    const durasiMs = jamSelesaiObj - jamMulaiObj;
+    const durasiJam = durasiMs / (1000 * 60 * 60);
+    
+    modal.innerHTML = `
+        <div class="detail-modal-overlay"></div>
+        <div class="detail-modal-content">
+            <div class="detail-modal-header">
+                <h2>Detail Booking #${booking.id}</h2>
+                <button class="detail-modal-close" onclick="this.closest('.detail-modal-content').parentElement.classList.remove('show'); setTimeout(() => this.closest('.detail-modal-content').parentElement.remove(), 300);">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="detail-modal-body">
+                <!-- Status Section -->
+                <div class="detail-section">
+                    <div class="detail-status-row">
+                        <div class="detail-status-item">
+                            <span class="detail-label">Status Booking</span>
+                            <span class="detail-status-badge" style="background: ${getStatusColor(booking.status)}; color: white;">
+                                ${getStatusText(booking.status)}
+                            </span>
+                        </div>
+                        <div class="detail-status-item">
+                            <span class="detail-label">Status Pembayaran</span>
+                            <span class="detail-status-badge" style="background: ${getPaymentStatusColor(booking.pembayaran_status)}; color: white;">
+                                ${getPaymentStatusText(booking.pembayaran_status)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Info -->
+                <div class="detail-section">
+                    <h3 class="detail-section-title">
+                        <i class="fas fa-user"></i> Informasi Pelanggan
+                    </h3>
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <span class="detail-label">Nama</span>
+                            <span class="detail-value">${booking.customer_name}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">${booking.customer_email}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Telepon</span>
+                            <span class="detail-value">${booking.customer_phone || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lapangan Info -->
+                <div class="detail-section">
+                    <h3 class="detail-section-title">
+                        <i class="fas fa-futbol"></i> Informasi Lapangan
+                    </h3>
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <span class="detail-label">Nama Lapangan</span>
+                            <span class="detail-value">${booking.lapangan_nama}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Jenis Olahraga</span>
+                            <span class="detail-value">${booking.jenis_nama || '-'}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Harga per Jam</span>
+                            <span class="detail-value">Rp ${Number(booking.harga_per_jam).toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                    ${booking.fasilitas && booking.fasilitas.length > 0 ? `
+                        <div class="detail-fasilitas">
+                            <span class="detail-label">Fasilitas</span>
+                            <div class="detail-fasilitas-list">
+                                ${booking.fasilitas.map(f => `<span class="detail-fasilitas-badge">${f}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <!-- Booking Schedule -->
+                <div class="detail-section">
+                    <h3 class="detail-section-title">
+                        <i class="fas fa-calendar"></i> Jadwal Booking
+                    </h3>
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <span class="detail-label">Tanggal</span>
+                            <span class="detail-value">${formattedDate}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Jam</span>
+                            <span class="detail-value">${jamMulai} - ${jamSelesai}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Durasi</span>
+                            <span class="detail-value">${durasiJam} jam</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Info -->
+                <div class="detail-section">
+                    <h3 class="detail-section-title">
+                        <i class="fas fa-credit-card"></i> Informasi Pembayaran
+                    </h3>
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <span class="detail-label">Metode Pembayaran</span>
+                            <span class="detail-value">${booking.pembayaran_metode || '-'}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-label">Tanggal Pembayaran</span>
+                            <span class="detail-value">${booking.pembayaran_created_at ? new Date(booking.pembayaran_created_at).toLocaleDateString('id-ID') : '-'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Summary -->
+                <div class="detail-section detail-price-section">
+                    <h3 class="detail-section-title">
+                        <i class="fas fa-file-invoice"></i> Ringkasan Harga
+                    </h3>
+                    <div class="detail-price-summary">
+                        <div class="detail-price-row">
+                            <span>Harga per Jam</span>
+                            <span>Rp ${Number(booking.harga_per_jam).toLocaleString('id-ID')}</span>
+                        </div>
+                        <div class="detail-price-row">
+                            <span>Durasi (${durasiJam} jam)</span>
+                            <span>×</span>
+                        </div>
+                        <div class="detail-price-row detail-total">
+                            <span>Total</span>
+                            <span>Rp ${Number(booking.total_harga).toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rating Section -->
+                ${booking.rating ? `
+                    <div class="detail-section">
+                        <h3 class="detail-section-title">
+                            <i class="fas fa-star"></i> Rating & Ulasan
+                        </h3>
+                        <div class="detail-rating-box">
+                            <div class="detail-rating-stars">
+                                ${[...Array(5)].map((_, i) => 
+                                    `<i class="fas fa-star" style="color: ${i < booking.rating.rating ? '#fbbf24' : '#e5e7eb'};"></i>`
+                                ).join('')}
+                                <span class="detail-rating-number">${booking.rating.rating}/5</span>
+                            </div>
+                            <p class="detail-rating-text">"${booking.rating.komentar}"</p>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="detail-modal-footer">
+                <button onclick="this.closest('.booking-modal').classList.remove('show'); setTimeout(() => this.closest('.booking-modal').remove(), 300);" class="detail-btn-close">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    const overlay = modal.querySelector('.detail-modal-overlay');
+    overlay.addEventListener('click', () => {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+    });
 }
 
 // Search functionality

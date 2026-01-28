@@ -14,6 +14,73 @@ require_once '../../config/db.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? null;
 
+// GET - Fetch booking detail
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'detail') {
+    header('Content-Type: application/json');
+    try {
+        $booking_id = $_GET['booking_id'] ?? null;
+
+        if (!$booking_id) {
+            throw new Exception('Booking ID tidak ditemukan');
+        }
+
+        // Fetch booking detail dengan semua informasi terkait
+        $query = "SELECT b.*, 
+                         u.name as customer_name, 
+                         u.email as customer_email,
+                         u.phone as customer_phone,
+                         l.nama as lapangan_nama,
+                         l.harga_per_jam,
+                         j.nama as jenis_nama,
+                         COALESCE(p.status, 'pending') as pembayaran_status,
+                         p.metode as pembayaran_metode,
+                         p.created_at as pembayaran_created_at
+                  FROM booking b
+                  INNER JOIN users u ON b.user_id = u.id
+                  INNER JOIN lapangan l ON b.lapangan_id = l.id
+                  LEFT JOIN jenis_olahraga j ON l.jenis = j.id
+                  LEFT JOIN pembayaran p ON b.id = p.booking_id
+                  WHERE b.id = ?";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$booking_id]);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$booking) {
+            throw new Exception('Booking tidak ditemukan');
+        }
+
+        // Fetch fasilitas yang digunakan
+        $fasilitas_query = "SELECT f.nama 
+                           FROM lapangan_fasilitas lf
+                           INNER JOIN fasilitas f ON lf.fasilitas_id = f.id
+                           WHERE lf.lapangan_id = ?";
+        $fasilitas_stmt = $pdo->prepare($fasilitas_query);
+        $fasilitas_stmt->execute([$booking['lapangan_id']]);
+        $fasilitas_list = $fasilitas_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Fetch rating jika ada
+        $rating_query = "SELECT * FROM ratings WHERE booking_id = ?";
+        $rating_stmt = $pdo->prepare($rating_query);
+        $rating_stmt->execute([$booking_id]);
+        $rating = $rating_stmt->fetch(PDO::FETCH_ASSOC);
+
+        $booking['fasilitas'] = $fasilitas_list;
+        $booking['rating'] = $rating;
+
+        echo json_encode([
+            'success' => true,
+            'data' => $booking
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
 // POST - Update booking status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'update_status') {
     try {

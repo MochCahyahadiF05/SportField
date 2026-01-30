@@ -1,6 +1,6 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/db.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/Auth.php';
+require_once dirname(__DIR__, 2) . '/config/db.php';
+require_once dirname(__DIR__, 2) . '/config/auth.php';
 
 header('Content-Type: application/json');
 

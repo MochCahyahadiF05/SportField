@@ -1,6 +1,16 @@
 <?php 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/Auth.php';
+$config_path = dirname(__DIR__, 2) . '/config/config.php';
+$auth_path = dirname(__DIR__, 2) . '/config/auth.php';
+
+if (!file_exists($config_path)) {
+    die('Config file not found: ' . $config_path);
+}
+if (!file_exists($auth_path)) {
+    die('Auth file not found: ' . $auth_path);
+}
+
+require_once $config_path;
+require_once $auth_path;
 
 $isLoggedIn = Auth::isLoggedIn();
 $currentUser = Auth::getUser();
@@ -11,7 +21,7 @@ $currentUser = Auth::getUser();
             <div class="logo-section">
                 <div class="logo-icon">
                     <!-- <span>SF</span> -->
-                    <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField logo">
+                    <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField logo" onerror="this.src='<?php echo BASE_URL; ?>assets/img/Logo.png';">
                 </div>
                 <h1 class="logo-text">SportField</h1>
             </div>

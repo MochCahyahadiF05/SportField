@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/config.php';
-require_once '../../config/Auth.php';
+require_once '../../config/auth.php';
 require_once '../../config/db.php';
 
 // Check if user is logged in

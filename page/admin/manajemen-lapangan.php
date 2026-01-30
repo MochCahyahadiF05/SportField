@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/config.php';
-require_once '../../config/Auth.php';
+require_once '../../config/auth.php';
 
 // Check if user is logged in
 if (!Auth::isLoggedIn()) {
@@ -62,9 +62,23 @@ try {
     $jenis_query = $pdo->query("SELECT * FROM jenis_olahraga ORDER BY nama ASC");
     $jenis_list = $jenis_query->fetchAll(PDO::FETCH_ASSOC);
     error_log("Loaded " . count($jenis_list) . " jenis olahraga records");
+    
+    // Get statistics for stats cards
+    $total_lapangan = count($lapangan_list);
+    
+    // Lapangan aktif (status = 'tersedia')
+    $aktif_stmt = $pdo->query("SELECT COUNT(*) as total FROM lapangan WHERE status = 'tersedia'");
+    $lapangan_aktif = $aktif_stmt->fetch()['total'] ?? 0;
+    
+    // Lapangan dalam perbaikan (status = 'perbaikan')
+    $perbaikan_stmt = $pdo->query("SELECT COUNT(*) as total FROM lapangan WHERE status = 'perbaikan'");
+    $lapangan_perbaikan = $perbaikan_stmt->fetch()['total'] ?? 0;
 } catch (Exception $e) {
     error_log("Error loading lapangan: " . $e->getMessage());
     error_log("Error code: " . $e->getCode());
+    $total_lapangan = 0;
+    $lapangan_aktif = 0;
+    $lapangan_perbaikan = 0;
 }
 
 // Start output buffering for page content
@@ -77,7 +91,7 @@ ob_start();
         <div class="stat-content">
             <div>
                 <p class="stat-label">Total Lapangan</p>
-                <p class="stat-value">8</p>
+                <p class="stat-value"><?php echo $total_lapangan; ?></p>
                 <p class="stat-info success">+2 bulan ini</p>
             </div>
             <div class="stat-icon blue">
@@ -92,7 +106,7 @@ ob_start();
         <div class="stat-content">
             <div>
                 <p class="stat-label">Lapangan Aktif</p>
-                <p class="stat-value green">7</p>
+                <p class="stat-value green"><?php echo $lapangan_aktif; ?></p>
                 <p class="stat-info">Siap digunakan</p>
             </div>
             <div class="stat-icon green">
@@ -107,27 +121,12 @@ ob_start();
         <div class="stat-content">
             <div>
                 <p class="stat-label">Dalam Perbaikan</p>
-                <p class="stat-value orange">1</p>
+                <p class="stat-value orange"><?php echo $lapangan_perbaikan; ?></p>
                 <p class="stat-info">Estimasi 2 hari</p>
             </div>
             <div class="stat-icon orange">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-content">
-            <div>
-                <p class="stat-label">Tingkat Okupansi</p>
-                <p class="stat-value purple">78%</p>
-                <p class="stat-info success">+5% dari minggu lalu</p>
-            </div>
-            <div class="stat-icon purple">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
             </div>
         </div>

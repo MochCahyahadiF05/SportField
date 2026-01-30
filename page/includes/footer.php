@@ -1,11 +1,11 @@
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php'; ?>
+<?php require_once dirname(__DIR__, 2) . '/config/config.php'; ?>
 <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
                         <div class="logo-icon">
-                            <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField Logo">
+                            <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField Logo" onerror="this.src='<?php echo BASE_URL; ?>assets/img/Logo.png';">
                         </div>
                         <h3>SportField</h3>
                     </div>

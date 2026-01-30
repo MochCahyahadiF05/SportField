@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/config.php';
-require_once '../../config/Auth.php';
+require_once '../../config/auth.php';
 
 // Check if user is logged in
 if (!Auth::isLoggedIn()) {
@@ -27,8 +27,8 @@ require_once '../../config/db.php';
 // Get customer statistics
 $stat_total = $pdo->query("SELECT COUNT(*) as total FROM users WHERE role='user'")->fetch()['total'];
 
-// Get booking count per customer for "Aktif" status
-$stat_aktif = $pdo->query("SELECT COUNT(DISTINCT user_id) as total FROM booking WHERE status IN ('confirmed', 'completed')")->fetch()['total'];
+// Get booking count per customer for "Aktif" status - HANYA ROLE USER
+$stat_aktif = $pdo->query("SELECT COUNT(DISTINCT b.user_id) as total FROM booking b JOIN users u ON b.user_id = u.id WHERE u.role='user' AND b.status IN ('confirmed', 'completed')")->fetch()['total'];
 
 // Get average rating
 $stat_rating = $pdo->query("SELECT COALESCE(ROUND(AVG(rating), 1), 0) as avg_rating FROM ratings")->fetch()['avg_rating'];

@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/config.php';
-require_once '../../config/Auth.php';
+require_once '../../config/auth.php';
 
 // Set timezone ke Indonesia
 date_default_timezone_set('Asia/Jakarta');

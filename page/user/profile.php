@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SportField</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../../assets/img/SportFields.png">
+    <link rel="shortcut icon" href="../../assets/img/SportFields.png">
     <link rel="stylesheet" href="../../assets/css/profile.css">
     <link rel="stylesheet" href="../../assets/css/navbar-footer.css">
     <script src="https://kit.fontawesome.com/80f227685e.js" crossorigin="anonymous"></script>
@@ -13,7 +16,7 @@
 <body>
     <?php 
     require_once '../../config/config.php';
-    require_once '../../config/Auth.php';
+    require_once '../../config/auth.php';
     require_once '../../config/db.php';
 
     // Set timezone

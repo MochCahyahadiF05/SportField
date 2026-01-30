@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/config.php';
-require_once '../../config/Auth.php';
+require_once '../../config/auth.php';
 
 // Set timezone ke Indonesia
 date_default_timezone_set('Asia/Jakarta');
@@ -49,8 +49,8 @@ $pdf->Cell(0, 5, 'Generated: ' . date('d M Y H:i'), 0, 1, 'C');
 $pdf->Ln(5);
 
 // Get statistics for date range (only completed and confirmed)
-$total_revenue = $pdo->query("SELECT COALESCE(SUM(total_harga), 0) as total FROM booking WHERE status IN ('confirmed', 'completed') AND DATE(created_at) >= '$tanggal_dari' AND DATE(created_at) <= '$tanggal_sampai'")->fetch()['total'];
-$total_bookings = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE status IN ('confirmed', 'completed') AND DATE(created_at) >= '$tanggal_dari' AND DATE(created_at) <= '$tanggal_sampai'")->fetch()['total'];
+$total_revenue = ($pdo->query("SELECT COALESCE(SUM(total_harga), 0) as total FROM booking WHERE status IN ('confirmed', 'completed') AND DATE(created_at) >= '$tanggal_dari' AND DATE(created_at) <= '$tanggal_sampai'")->fetch() ?? ['total' => 0])['total'];
+$total_bookings = ($pdo->query("SELECT COUNT(*) as total FROM booking WHERE status IN ('confirmed', 'completed') AND DATE(created_at) >= '$tanggal_dari' AND DATE(created_at) <= '$tanggal_sampai'")->fetch() ?? ['total' => 0])['total'];
 $avg_revenue = $total_bookings > 0 ? $total_revenue / $total_bookings : 0;
 
 // Summary Section
@@ -114,7 +114,7 @@ if ($tipe_laporan === 'harian') {
     ";
 
     $stmt = $pdo->query($detailed_query);
-    $detailed_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $detailed_data = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
     $fill = false;
     $daily_subtotal = 0;
@@ -205,7 +205,7 @@ if ($tipe_laporan === 'bulanan') {
     ";
 
     $stmt = $pdo->query($monthly_report_query);
-    $monthly_report = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $monthly_report = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
     $fill = false;
     if (empty($monthly_report)) {

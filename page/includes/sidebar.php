@@ -1,8 +1,8 @@
 <?php
 // Get current page filename untuk highlight active menu
 $current_page = basename($_SERVER['PHP_SELF']);
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/UAS/config/db.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/db.php';
 
 // Get pending bookings count
 global $pdo;
@@ -20,7 +20,7 @@ try {
         <!-- Logo -->
         <div class="logo-section">
             <div class="logo-icon">
-                <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField logo" style="width: 40px; height: 40px; object-fit: contain;">
+                <img src="<?php echo ASSETS_URL; ?>img/Logo.png" alt="SportField logo" style="width: 40px; height: 40px; object-fit: contain;" onerror="this.src='../../assets/img/Logo.png';">
             </div>
             <div class="logo-text">
                 <h1>SportField</h1>

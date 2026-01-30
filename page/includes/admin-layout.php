@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title ?? 'SportField'; ?> - Admin Panel</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../../assets/img/SportFields.png">
+    <link rel="shortcut icon" href="../../assets/img/SportFields.png">
     <!-- Shared Layout Styles -->
     <link rel="stylesheet" href="../../assets/css/admin_style/admin-layout.css">
     <link rel="stylesheet" href="../../assets/css/admin_style/sidebar.css">

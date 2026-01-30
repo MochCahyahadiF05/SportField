@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SportField - Login</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../../assets/img/SportFields.png">
+    <link rel="shortcut icon" href="../../assets/img/SportFields.png">
     <link rel="stylesheet" href="../../assets/css/login.css">
 </head>
 <body>
